@@ -1,0 +1,159 @@
+#!/bin/bash
+
+pprint() {
+    declare -A colors=(
+        ['red']='\033[0;31m'
+        ['green']='\033[0;32m'
+        ['yellow']='\033[0;33m'
+        ['blue']='\033[0;34m'
+        ['purple']='\033[0;35m'
+        ['cyan']='\033[0;36m'
+    )
+    
+    local message="$1"
+    local color="${2:-purple}"
+    
+    local color_code="${colors[$color]:-${colors['purple']}}"
+    printf "${color_code}${message}"
+}
+
+color_reset() { 
+    printf '\033[0m' 
+}
+
+yesnoprompt() {
+    pprint " (y/n)? " "cyan"
+    old_stty_cfg=$(stty -g)
+    stty raw -echo
+    answer=$(head -c 1)
+    stty $old_stty_cfg
+    echo
+    [[ "$answer" =~ [yY] ]]
+}
+
+update_system() {
+    pprint "\n\nUpdating package list.. " "blue"
+    if sudo apt update 2>&1 | grep -q "can be upgraded"; then
+        pprint "UPDATES AVAILABLE" "green"
+        pprint "\n\nDo you want to automatically upgrade packages"
+        if yesnoprompt; then
+            pprint "\n\nUpgrading packages.. " "blue"
+            if sudo apt upgrade -y &>/dev/null; then
+                pprint "SUCCESS!\n\n" "green"
+            else
+                pprint "FAILED\n\n" "red"
+                exit 1
+            fi
+        else
+            echo
+        fi
+    else
+        pprint "SYSTEM IS UP TO DATE\n\n" "green"
+    fi
+}
+
+install_packages() {
+    if ! command -v pip &>/dev/null; then
+        pprint "Python pip not found, installing now..." "yellow"
+        if sudo apt install python3-pip -y &>>pypilog.txt; then
+            pprint "SUCCESS.\n\n" "green"
+        else
+            pprint "FAILED.\n\n" "red"
+            exit 1
+        fi
+    fi
+
+    if ! command -v ffmpeg &>/dev/null; then
+        pprint "FFmpeg not found, installing now..." "yellow"
+        if sudo apt install ffmpeg -y &>/dev/null; then
+            pprint "SUCCESS.\n\n" "green"
+        else
+            pprint "FAILED.\n\n" "red"
+            pprint "You need to install ffmpeg manually to deploy VX, exiting...\n" "blue"
+            exit 1
+        fi
+    fi
+
+    local ffmpeg_version=$(ffmpeg -version 2>/dev/null | grep -Po 'version (3.*?) ' | head -1)
+    if [[ "$ffmpeg_version" =~ 3.* ]]; then
+        pprint "Warning: Live streams may not work properly. You have ffmpeg $ffmpeg_version, but version 4+ is recommended.\n" "yellow"
+    fi
+}
+
+install_node() {
+    command -v npm &>/dev/null && return
+    
+    pprint "Installing Node.js and npm.. " "blue"
+    if curl -fsSL https://deb.nodesource.com/setup_19.x | sudo -E bash - &>>nodelog.txt && \
+       sudo apt install -y nodejs &>>nodelog.txt && \
+       sudo npm i -g npm &>>nodelog.txt; then
+        pprint "SUCCESS!\n" "green"
+    else
+        pprint "FAILED.\n" "red"
+        exit 1
+    fi
+}
+
+install_dependencies() {
+    pprint "\n\nUpgrading pip and installing dependencies..." "blue"
+    if pip3 install -U pip &>>pypilog.txt && \
+       pip3 install -U -r requirements.txt &>>pypilog.txt; then
+        pprint "DONE.\n" "green"
+    else
+        pprint "FAILED.\n" "red"
+        exit 1
+    fi
+}
+
+setup_configuration() {
+    clear
+    pprint "\nVX Configuration Setup\n\n" "purple"
+    pprint "Enter your configuration values:\n\n" "blue"
+    
+    declare -A config=(
+        ['API_ID']="Telegram API ID"
+        ['API_HASH']="Telegram API HASH"
+        ['BOT_TOKEN']="Telegram Bot Token"
+        ['OWNER_ID']="Owner User ID"
+        ['MONGO_DB_URI']="MongoDB Connection URI"
+        ['LOG_GROUP_ID']="Log Group ID"
+        ['STRING_SESSION']="Telegram String Session"
+    )
+    
+    for key in "${!config[@]}"; do
+        pprint "${config[$key]}: " "cyan"
+        read -r value
+        echo "$key = $value" >> .env
+    done
+}
+
+main() {
+    clear
+    pprint "Welcome to VX Setup Installer\n\n" "purple"
+    pprint "Installation logs will be saved in:\n" "blue"
+    pprint "  - nodelog.txt (for Node.js installation)\n" "yellow"
+    pprint "  - pypilog.txt (for Python packages)\n\n" "yellow"
+    sleep 2
+    
+    pprint "This script requires sudo privileges to install packages.\n" "blue"
+    sudo -v || (pprint "Error: Failed to get sudo privileges.\n" "red"; exit 1)
+    
+    update_system
+    install_packages
+    install_node
+    install_dependencies
+    
+    clear
+    pprint "\nVX Installation Completed Successfully!\n\n" "green"
+    sleep 2
+    
+    setup_configuration
+    
+    clear
+    pprint "\n\nVX setup is now complete!\n" "green"
+    pprint "You can start the bot with: " "blue"
+    pprint "bash start.sh\n\n" "cyan"
+    color_reset
+}
+
+main

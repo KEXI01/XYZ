@@ -1,0 +1,1 @@
+-r https://raw.githubusercontent.com/KEX001/Opus/main/core/codex.txt
