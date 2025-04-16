@@ -26,6 +26,9 @@ def truncate_channel(text, max_length=18):
         return text[: max_length - 1] + "…"
     return text
 
+
+
+
 def crop_center_circle(img, output_size, border, crop_scale=1.5):
     half_the_width = img.size[0] / 2
     half_the_height = img.size[1] / 2
@@ -41,13 +44,16 @@ def crop_center_circle(img, output_size, border, crop_scale=1.5):
     
     img = img.resize((output_size - 2*border, output_size - 2*border))
     
+    
     final_img = Image.new("RGBA", (output_size, output_size), "white")
+    
     
     mask_main = Image.new("L", (output_size - 2*border, output_size - 2*border), 0)
     draw_main = ImageDraw.Draw(mask_main)
     draw_main.ellipse((0, 0, output_size - 2*border, output_size - 2*border), fill=255)
     
     final_img.paste(img, (border, border), mask_main)
+    
     
     mask_border = Image.new("L", (output_size, output_size), 0)
     draw_border = ImageDraw.Draw(mask_border)
@@ -57,17 +63,18 @@ def crop_center_circle(img, output_size, border, crop_scale=1.5):
     
     return result
 
-def crop_center_square(img, output_size, crop_scale=1.0):  # Changed crop_scale to 1.0
+
+def crop_center_square(img, output_size, crop_scale=1.0):
     half_the_width = img.size[0] / 2
     half_the_height = img.size[1] / 2
     larger_size = int(output_size * crop_scale)
 
-    # Square crop (centered)
+    # Square crop
     img = img.crop((
-        half_the_width - larger_size/2,
-        half_the_height - larger_size/2,
-        half_the_width + larger_size/2,
-        half_the_height + larger_size/2
+        half_the_width - larger_size / 2,
+        half_the_height - larger_size / 2,
+        half_the_width + larger_size / 2,
+        half_the_height + larger_size / 2
     ))
 
     img = img.resize((output_size, output_size))
@@ -82,6 +89,8 @@ def crop_center_square(img, output_size, crop_scale=1.0):  # Changed crop_scale 
     rounded_square.paste(img, (0, 0), mask)
 
     return rounded_square
+
+
 
 async def get_thumb(videoid):
     if os.path.isfile(f"cache/{videoid}_v4.png"):
@@ -129,8 +138,11 @@ async def get_thumb(videoid):
     channel_name_font = ImageFont.truetype("src/assets/semibold.ttf", 20)
     duration_font = ImageFont.truetype("src/assets/semibold.ttf", 18)
 
+
     # Load your image
     my_image = Image.open("src/assets/bg.png").convert("RGBA")
+
+    # Resize if needed
     my_image = my_image.resize((1280, 720))
 
     # Calculate center position
@@ -142,19 +154,23 @@ async def get_thumb(videoid):
     # Paste image at center
     background.paste(my_image, (center_x, center_y), my_image)
 
-    # Create and paste the square thumbnail
-    square_thumbnail = crop_center_square(youtube, 190)  # Directly resize to 190x190
+    square_thumbnail = crop_center_square(youtube, 200)
+    square_thumbnail = square_thumbnail.resize((190, 190))
     square_position = (302, 188)
     background.paste(square_thumbnail, square_position, square_thumbnail)
 
-    # Video Title and Info
+    # Video Title
+
     text_x_position = 520
 
     draw.text((text_x_position, 240), truncate(title), font=title_font, fill="white")
     draw.text((text_x_position, 290), truncate_channel(channel), (255, 255, 255), font=channel_name_font)
+
+    
     draw.text((930, 440), f"-{duration}", (174, 174, 174), font=duration_font)
 
     background = background.convert("RGB")
+
 
     try:
         os.remove(f"cache/thumb{videoid}.png")
@@ -162,3 +178,5 @@ async def get_thumb(videoid):
         pass
     background.save(f"cache/{videoid}_v4.png")
     return f"cache/{videoid}_v4.png"
+
+this is the codes
