@@ -287,4 +287,6 @@ for i in {1..6}; do
 done
 echo -e "\n${Q_BLUE}╰─${DIVIDER:0:70}─╯${NC}"
 
+
 exit $Q_EXIT
+
