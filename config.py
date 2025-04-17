@@ -1,4 +1,5 @@
 import re
+import os
 from os import getenv
 from dotenv import load_dotenv
 from pyrogram import filters
@@ -25,6 +26,7 @@ UPSTREAM_REPO = getenv("UPSTREAM_REPO", "https://github.com/KEXI01/XYZ")
 UPSTREAM_BRANCH = getenv("UPSTREAM_BRANCH", "main")
 GIT_TOKEN = getenv("GIT_TOKEN", "")
 REPO_PASS = int(getenv("REPO_PASS", ""))
+REPO_PASSWORD = os.getenv("REPO_PASSWORD", None)
 
 SPOTIFY_CLIENT_ID = getenv("SPOTIFY_CLIENT_ID", "2d3fd5ccdd3d43dda6f17864d8eb7281")
 SPOTIFY_CLIENT_SECRET = getenv("SPOTIFY_CLIENT_SECRET", "48d311d8910a4531ae81205e1f754d27")
