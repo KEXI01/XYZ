@@ -5,7 +5,7 @@ from Opus import app
 
 MUST_JOIN_CHANNEL = "STORM_TECHH"
 
-@app.on_message(filters.incoming & group=-1)
+@app.on_message(filters.incoming, group=-1)
 async def must_join_channel(app: Client, msg: Message):
     if not MUST_JOIN_CHANNEL:
         return
@@ -21,15 +21,9 @@ async def must_join_channel(app: Client, msg: Message):
 
             try:
                 await msg.reply_text(
-                    text=(
-                        "<blockquote><b>» ᴛᴏ ᴜꜱᴇ ᴍʏ ꜰᴇᴀᴛᴜʀᴇꜱ, ʏᴏᴜ ᴍᴜꜱᴛ ᴊᴏɪɴ ᴏᴜʀ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ ғɪʀꜱᴛ.</b></blockquote>"
-                    ),
+                    text="<blockquote><b>» ᴛᴏ ᴜꜱᴇ ᴍʏ ꜰᴇᴀᴛᴜʀᴇꜱ, ʏᴏᴜ ᴍᴜꜱᴛ ᴊᴏɪɴ ᴏᴜʀ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ ғɪʀꜱᴛ.</b></blockquote>",
                     reply_markup=InlineKeyboardMarkup(
-                        [
-                            [
-                                InlineKeyboardButton("📢 ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ", url=invite_link),
-                            ]
-                        ]
+                        [[InlineKeyboardButton("📢 ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ", url=invite_link)]]
                     )
                 )
                 await msg.stop_propagation()
