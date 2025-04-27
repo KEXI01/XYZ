@@ -1,10 +1,8 @@
 import time
-
 from pyrogram import filters
 from pyrogram.enums import ChatType
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
-from youtubesearchpython.__future__ import VideosSearch
-
+from youtubesearchpython import VideosSearch
 import config
 from Opus import app
 from Opus.misc import _boot_
@@ -54,7 +52,6 @@ async def start_pm(client, message: Message, _):
                 title = result["title"]
                 duration = result["duration"]
                 views = result["viewCount"]["short"]
-                thumbnail = result["thumbnails"][0]["url"].split("?")[0]
                 channellink = result["channel"]["link"]
                 channel = result["channel"]["name"]
                 link = result["link"]
@@ -71,8 +68,7 @@ async def start_pm(client, message: Message, _):
                 ]
             )
             await m.delete()
-            await app.send_message(
-                chat_id=message.chat.id,
+            await message.reply(
                 text=searched_text,
                 reply_markup=key,
             )
@@ -80,13 +76,13 @@ async def start_pm(client, message: Message, _):
                 return await app.send_message(
                     chat_id=config.LOGGER_ID,
                     text=f"<blockquote><b>» <a href='https://t.me/{message.from_user.username}'>ᴜsᴇʀ</a> ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ ᴛʀᴀᴄᴋ ɪɴғᴏʀᴍᴀᴛɪᴏɴ</b>\n<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code></blockquote>",
-                    disable_web_page_preview=True
+                    disable_web_page_preview=False
                 )
     else:
         out = private_panel(_)
         await message.reply(
-            text=_["start_2"].format(message.from_user.mention, app.mention),
-            reply_markup=InlineKeyboardMarkup(out),
+    text='<blockquote><b><u>ᴅɪᴠᴇ ɪɴᴛᴏ ᴀ ᴍᴜꜱɪᴄᴀʟ ᴜɴɪᴠᴇʀꜱᴇ 🌌</u>\n<u>ᴘʀᴇᴍɪᴜᴍ ꜱᴛʀᴇᴀᴍɪɴɢ ᴇxᴘᴇʀɪᴇɴᴄᴇ ᴡɪᴛʜ:</u>\n• ʏᴏᴜᴛᴜʙᴇ & ꜱᴘᴏᴛɪꜰʏ ꜱᴜᴘᴘᴏʀᴛ\n• 24/7 ʜɪɢʜ Qᴜᴀʟɪᴛʏ ᴀᴜᴅɪᴏ\n• ᴜɴʟɪᴍɪᴛᴇᴅ ᴍᴜꜱɪᴄ ᴀᴄᴄᴇꜱꜱ</b></blockquote>\n<blockquote><b>ꜱᴛʀᴇᴀᴍ ᴍᴜꜱɪᴄ ᴀɴʏᴛɪᴍᴇ, ᴀɴʏᴡʜᴇʀᴇ</b></blockquote>\n<blockquote><b>Ɵᴘᴜs ᴠ2</b><a href="https://envs.sh/4YB.jpg">.</a>0</blockquote>',
+    reply_markup=InlineKeyboardMarkup(out),
         )
         if await is_on_off(2):
             return await app.send_message(
