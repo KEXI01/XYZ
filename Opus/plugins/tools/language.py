@@ -32,7 +32,7 @@ def lanuages_keyboard(_):
     return keyboard
 
 
-@app.on_message(filters.command(["lang", "setlang", "language"]) & ~BANNED_USERS)
+@app.on_message(filters.command(["lang", "setlang", "language"]) & filters.group)
 @language
 async def langs_command(client, message: Message, _):
     keyboard = lanuages_keyboard(_)
@@ -42,7 +42,7 @@ async def langs_command(client, message: Message, _):
     )
 
 
-@app.on_callback_query(filters.regex("LG") & ~BANNED_USERS)
+@app.on_callback_query(filters.regex("LG") & filters.group)
 @languageCB
 async def lanuagecb(client, CallbackQuery, _):
     try:
@@ -53,7 +53,7 @@ async def lanuagecb(client, CallbackQuery, _):
     return await CallbackQuery.edit_message_reply_markup(reply_markup=keyboard)
 
 
-@app.on_callback_query(filters.regex(r"languages:(.*?)") & ~BANNED_USERS)
+@app.on_callback_query(filters.regex(r"languages:(.*?)") & filters.group)
 @ActualAdminCB
 async def language_markup(client, CallbackQuery, _):
     langauge = (CallbackQuery.data).split(":")[1]
