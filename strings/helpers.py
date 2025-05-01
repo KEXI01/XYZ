@@ -1,6 +1,6 @@
 HELP_1 = """<blockquote><b><u>ᴀɪ ᴄᴏᴍᴍᴀɴᴅs :</b></u></blockquote>
 
-<blockquote><b>ᴄᴏᴍɪɴɢ ꜱᴏᴏɴ</b></blockquote>.
+<blockquote><b>ᴄᴏᴍɪɴɢ ꜱᴏᴏɴ</b></blockquote>
 """
 
 HELP_2 = """<blockquote><b><u>ᴀᴅᴍɪɴ ᴄᴏᴍᴍᴀɴᴅs :</b></u></blockquote>
