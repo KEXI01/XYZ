@@ -4,6 +4,7 @@ from pyrogram.errors import ChatAdminRequired, UserNotParticipant, ChatWriteForb
 from Opus import app
 
 MUST_JOIN_CHANNEL = "STORM_TECHH"  # your updates channel
+SUPPORT_GROUP = "TheVibeVerse"  # your support group
 
 @app.on_message(filters.incoming & filters.private, group=-1)
 async def must_join_channel(app: Client, msg: Message):
@@ -13,22 +14,32 @@ async def must_join_channel(app: Client, msg: Message):
         try:
             await app.get_chat_member(MUST_JOIN_CHANNEL, msg.from_user.id)
         except UserNotParticipant:
-            # Get the invite link
+            # Get the invite links
             if MUST_JOIN_CHANNEL.isalpha():
-                invite_link = f"https://t.me/{MUST_JOIN_CHANNEL}"
+                channel_link = f"https://t.me/{MUST_JOIN_CHANNEL}"
             else:
-                chat_info = await app.get_chat(MUST_JOIN_CHANNEL)
-                invite_link = chat_info.invite_link
+                channel_info = await app.get_chat(MUST_JOIN_CHANNEL)
+                channel_link = channel_info.invite_link
+            
+            if SUPPORT_GROUP.isalpha():
+                support_link = f"https://t.me/{SUPPORT_GROUP}"
+            else:
+                support_info = await app.get_chat(SUPPORT_GROUP)
+                support_link = support_info.invite_link
 
             try:
                 await msg.reply_text(
                     text=(
-                        "<blockquote><b>» ᴛᴏ ᴜꜱᴇ ᴍʏ ꜰᴇᴀᴛᴜʀᴇꜱ, ʏᴏᴜ ᴍᴜꜱᴛ ᴊᴏɪɴ ᴏᴜʀ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ ғɪʀꜱᴛ.</b></blockquote>"
+                        "<blockquote><b>» ᴛᴏ ᴜꜱᴇ ᴍʏ ꜰᴇᴀᴛᴜʀᴇꜱ, ʏᴏᴜ ᴍᴜꜱᴛ ᴊᴏɪɴ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ ᴀɴᴅ ɢʀᴏᴜᴘ</b></blockquote>"
                     ),
                     reply_markup=InlineKeyboardMarkup(
                         [
                             [
-                                InlineKeyboardButton("📢 ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ", url=invite_link),
+                                InlineKeyboardButton("📢 ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ", url=channel_link),
+                                InlineKeyboardButton("💬 ꜱᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url=support_link)
+                            ],
+                            [
+                                InlineKeyboardButton("🔄 ᴛʀʏ ᴀɢᴀɪɴ", callback_data="check_joined")
                             ]
                         ]
                     )
