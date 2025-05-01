@@ -1,117 +1,74 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
 from pyrogram.errors import ChatAdminRequired, UserNotParticipant, ChatWriteForbidden
-from Opus import app
+from Opus import app 
 
-MUST_JOIN_CHANNEL = "STORM_TECHH"  # your updates channel
-SUPPORT_GROUP = "TheVibeVerse"  # your support group
+MUST_JOIN_CHANNEL = "STORM_TECHH"
+SUPPORT_GROUP = "TheVibeVerse"
 
-async def check_joined(user_id):
-    channel_joined = await app.get_chat_member(MUST_JOIN_CHANNEL, user_id)
-    group_joined = await app.get_chat_member(SUPPORT_GROUP, user_id)
-    return channel_joined, group_joined
-
-async def generate_buttons():
-    # Get invite links
-    channel_link = f"https://t.me/{MUST_JOIN_CHANNEL}" if MUST_JOIN_CHANNEL.isalpha() else (await app.get_chat(MUST_JOIN_CHANNEL)).invite_link
-    support_link = f"https://t.me/{SUPPORT_GROUP}" if SUPPORT_GROUP.isalpha() else (await app.get_chat(SUPPORT_GROUP)).invite_link
-    
-    return channel_link, support_link
-
-@app.on_message(filters.private & filters.incoming)
-async def force_join(app: Client, msg: Message):
+async def check_user_membership(client: Client, user_id: int, chat_id: str) -> bool:
     try:
-        channel_joined = group_joined = False
-        
-        try:
-            await app.get_chat_member(MUST_JOIN_CHANNEL, msg.from_user.id)
-            channel_joined = True
-        except UserNotParticipant:
-            pass
-            
-        try:
-            await app.get_chat_member(SUPPORT_GROUP, msg.from_user.id)
-            group_joined = True
-        except UserNotParticipant:
-            pass
-
-        if channel_joined and group_joined:
-            return
-            
-        channel_link, support_link = await generate_buttons()
-        buttons = []
-        
-        if not channel_joined and not group_joined:
-            buttons = [
-                [InlineKeyboardButton("📢 ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ", url=channel_link),
-                 InlineKeyboardButton("💬 ᴊᴏɪɴ ɢʀᴏᴜᴘ", url=support_link)],
-                [InlineKeyboardButton("🔄", callback_data="refresh_join")]
-            ]
-        elif not channel_joined:
-            buttons = [
-                [InlineKeyboardButton("📢 ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ", url=channel_link)],
-                [InlineKeyboardButton("🔄", callback_data="refresh_join")]
-            ]
-        elif not group_joined:
-            buttons = [
-                [InlineKeyboardButton("💬 ᴊᴏɪɴ ɢʀᴏᴜᴘ", url=support_link)],
-                [InlineKeyboardButton("🔄", callback_data="refresh_join")]
-            ]
-
-        await msg.reply(
-            "🔐 ᴘʟᴇᴀꜱᴇ ᴊᴏɪɴ ᴛʜᴇ ɢʀᴏᴜᴘ ᴀɴᴅ ᴄʜᴀɴɴᴇʟ ᴛᴏ ᴄᴏɴᴛɪɴᴜᴇ:",
-            reply_markup=InlineKeyboardMarkup(buttons)
-        )
-        
+        await client.get_chat_member(chat_id, user_id)
+        return True
+    except UserNotParticipant:
+        return False
     except ChatAdminRequired:
-        print(f"ᴍᴀᴋᴇ ᴍᴇ ᴀᴅᴍɪɴ ɪɴ {MUST_JOIN_CHANNEL} ᴀɴᴅ {SUPPORT_GROUP}")
-
-@app.on_callback_query(filters.regex("^refresh_join$"))
-async def refresh_buttons(app: Client, query: CallbackQuery):
-    try:
-        channel_joined = group_joined = False
+        print(f"⚠️ ʙᴏᴛ ɪꜱ ɴᴏᴛ ᴀᴅᴍɪɴ ɪɴ: {chat_id}")
+        return True  
         
-        try:
-            await app.get_chat_member(MUST_JOIN_CHANNEL, query.from_user.id)
-            channel_joined = True
-        except UserNotParticipant:
-            pass
-            
-        try:
-            await app.get_chat_member(SUPPORT_GROUP, query.from_user.id)
-            group_joined = True
-        except UserNotParticipant:
-            pass
+def get_invite_link(username: str) -> str:
+    return f"https://t.me/{username}"
 
-        if channel_joined and group_joined:
-            await query.message.delete()
-            await query.answer("ᴅᴏɴᴇ ✨", show_alert=True)
-            return
-            
-        channel_link, support_link = await generate_buttons()
+async def send_force_join_message(client: Client, user_id: int, old_msg_id: int = None):
+    need_channel = not await check_user_membership(client, user_id, MUST_JOIN_CHANNEL)
+    need_group = not await check_user_membership(client, user_id, SUPPORT_GROUP)
+
+    if need_channel or need_group:
         buttons = []
-        
-        if not channel_joined and not group_joined:
-            buttons = [
-                [InlineKeyboardButton("📢 ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ", url=channel_link),
-                 InlineKeyboardButton("💬 ᴊᴏɪɴ ɢʀᴏᴜᴘ", url=support_link)],
-                [InlineKeyboardButton("🔄", callback_data="refresh_join")]
-            ]
-        elif not channel_joined:
-            buttons = [
-                [InlineKeyboardButton("📢 ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ", url=channel_link)],
-                [InlineKeyboardButton("🔄", callback_data="refresh_join")]
-            ]
-        elif not group_joined:
-            buttons = [
-                [InlineKeyboardButton("💬 ᴊᴏɪɴ ɢʀᴏᴜᴘ", url=support_link)],
-                [InlineKeyboardButton("🔄", callback_data="refresh_join")]
-            ]
+        if need_channel:
+            buttons.append(InlineKeyboardButton("📢 ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ", url=get_invite_link(MUST_JOIN_CHANNEL)))
+        if need_group:
+            buttons.append(InlineKeyboardButton("💬 ꜱᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", url=get_invite_link(SUPPORT_GROUP)))
+        keyboard = [buttons] if buttons else []
+        keyboard.append([InlineKeyboardButton("🔄", callback_data="check_joined")])
 
-        await query.message.edit_reply_markup(
-            reply_markup=InlineKeyboardMarkup(buttons)
+        if old_msg_id:
+            try:
+                await client.delete_messages(chat_id=user_id, message_ids=old_msg_id)
+            except:
+                pass
+
+        await client.send_message(
+            chat_id=user_id,
+            text="<blockquote><b>» ᴛᴏ ᴜꜱᴇ ᴍʏ ꜰᴇᴀᴛᴜʀᴇꜱ, ʏᴏᴜ ᴍᴜꜱᴛ ᴊᴏɪɴ ʙᴏᴛʜ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ ᴀɴᴅ ꜱᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ.</b></blockquote>",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            disable_web_page_preview=True
         )
-        await query.answer("ꜱᴛᴀᴛᴜꜱ ᴜᴘᴅᴀᴛᴇᴅ ⚡")
-        
-    except Exception as e:
-        await query.answer(f"Error: {str(e)}", show_alert=True)
+        return True
+    return False
+
+@app.on_message(filters.incoming & filters.private, group=-1)
+async def must_join_handler(client: Client, msg: Message):
+    try:
+        blocked = await send_force_join_message(client, msg.from_user.id)
+        if blocked:
+            await msg.stop_propagation()
+    except ChatWriteForbidden:
+        pass
+
+@app.on_callback_query(filters.regex("check_joined"))
+async def recheck_callback(client: Client, callback_query: CallbackQuery):
+    user = callback_query.from_user
+    msg = callback_query.message
+
+    blocked = await send_force_join_message(client, user.id, old_msg_id=msg.id)
+
+    if not blocked:
+        try:
+            await client.delete_messages(chat_id=user.id, message_ids=msg.id)
+        except:
+            pass
+        await client.send_message(
+            chat_id=user.id,
+            text="<blockquote><b>✅ ʏᴏᴜ ʜᴀᴠᴇ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴊᴏɪɴᴇᴅ ʙᴏᴛʜ! ʏᴏᴜ ᴄᴀɴ ɴᴏᴡ ᴜꜱᴇ ᴛʜᴇ ʙᴏᴛ.</b></blockquote>"
+        )
