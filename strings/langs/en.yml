@@ -93,7 +93,7 @@ admin_47 : "ᴍᴜꜱɪᴄ ɪꜱ ᴀʟʀᴇᴀᴅʏ ᴜɴᴍᴜᴛᴇᴅ."
 admin_48 : "🎧 ᴠᴏɪᴄᴇᴄʜᴀᴛ ᴜɴᴍᴜᴛᴇᴅ ʙʏ {}!"
 
 start_1 : "<blockquote>{0} ɪs ᴏᴘᴇʀᴀᴛɪᴏɴᴀʟ! 🚀</blockquote>\n\n<blockquote><b>» ᴜᴘᴛɪᴍᴇ :</b> {1}</blockquote>"
-start_2: "<blockquote><b><u>ᴅɪᴠᴇ ɪɴᴛᴏ ᴀ ᴍᴜꜱɪᴄᴀʟ ᴜɴɪᴠᴇʀꜱᴇ 🍁</u></b></blockquote>\n<blockquote><b>ɪ ᴡɪʟʟ ᴇʟᴇᴠᴀᴛᴇ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴠɪᴅᴇᴏ ᴄʜᴀᴛ ᴡɪᴛʜ ᴀᴡᴇsᴏᴍᴇ ᴍᴜsɪᴄ. ꜱᴛʀᴇᴀᴍ ᴍᴜꜱɪᴄ ᴀɴʏᴛɪᴍᴇ, ᴀɴʏᴡʜᴇʀᴇ</b></blockquote>\n<blockquote><b>Ɵᴘᴜs ᴠ2</b><a href='https://envs.sh/Pa1.mp4'>.</a>0</blockquote>"
+start_2: "<blockquote><b><u>ᴅɪᴠᴇ ɪɴᴛᴏ ᴀ ᴍᴜꜱɪᴄᴀʟ ᴜɴɪᴠᴇʀꜱᴇ 🍁</u></b></blockquote>\n<blockquote><b>ɪ ᴡɪʟʟ ᴇʟᴇᴠᴀᴛᴇ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴠɪᴅᴇᴏ ᴄʜᴀᴛ ᴡɪᴛʜ ᴀᴡᴇsᴏᴍᴇ ᴍᴜsɪᴄ. ꜱᴛʀᴇᴀᴍ ᴍᴜꜱɪᴄ ᴀɴʏᴛɪᴍᴇ, ᴀɴʏᴡʜᴇʀᴇ\n/help ꜰᴏʀ ᴄᴏᴍᴍᴀɴᴅꜱ</b></blockquote>\n<blockquote><b>Ɵᴘᴜs ᴠ2</b><a href='https://envs.sh/Pa1.mp4'>.</a>0</blockquote>"
 start_3 : "<b>ʜᴇʏ {0}</b>,\n<blockquote>ᴛʜɪs ɪs {1} ❄️</blockquote>\n\n<blockquote>ᴛʜᴀɴᴋs ғᴏʀ ᴀᴅᴅɪɴɢ ᴍᴇ ɪɴ {2}, {3} ᴄᴀɴ ɴᴏᴡ ᴩʟᴀʏ sᴏɴɢs ɪɴ ᴛʜɪs ᴄʜᴀᴛ</blockquote>"
 start_4 : "<b><blockquote>sᴜᴘᴇʀɢʀᴏᴜᴘ ɴᴇᴇᴅᴇᴅ</b> ✨</blockquote>\n\n<blockquote>ᴘʟᴇᴀsᴇ ᴄᴏɴᴠᴇʀᴛ ʏᴏᴜʀ <b>ɢʀᴏᴜᴘ</b> ᴛᴏ <b>sᴜᴘᴇʀɢʀᴏᴜᴘ</b> ᴀɴᴅ ᴛʜᴇɴ ᴀᴅᴅ ᴍᴇ ᴀɢᴀɪɴ</blockquote>\n\n<b><blockquote>ʜᴏᴡ ᴛᴏ ᴍᴀᴋᴇ sᴜᴘᴇʀɢʀᴏᴜᴘ ?</b>\n- ᴍᴀᴋᴇ ʏᴏᴜʀ ɢʀᴏᴜᴘ's ᴄʜᴀᴛ ʜɪsᴛᴏʀʏ <b>ᴠɪsɪʙʟᴇ</b> ᴏɴᴄᴇ</blockquote>"
 start_5 : "<blockquote><b>ʙʟᴀᴄᴋʟɪsᴛᴇᴅ ᴄʜᴀᴛ</b></blockquote>\n\n<blockquote>ᴛʜɪs ᴄʜᴀᴛ ɪs ʙʟᴀᴄᴋʟɪsᴛᴇᴅ ᴏɴ {0} ᴅᴀᴛᴀʙᴀsᴇ\nʀᴇǫᴜᴇsᴛ ᴀ <a href={1}>sᴜᴅᴏ ᴜsᴇʀ</a> ᴛᴏ ᴜɴʙʟᴀᴄᴋʟɪsᴛ ʏᴏᴜʀ ᴄʜᴀᴛ ᴏʀ ᴠɪsɪᴛ <a href={2}>sᴜᴘᴘᴏʀᴛ ᴄʜᴀᴛ</a></blockquote>"
