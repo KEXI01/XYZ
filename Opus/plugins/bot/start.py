@@ -79,10 +79,12 @@ async def start_pm(client, message: Message, _):
                     disable_web_page_preview=False
                 )
     else:
+        await message.reply_sticker("CAACAgUAAxkBAAKSRGgUiq7a6XfXos3Gb8QK830AAef2vAACcwcAAiRO8VXjkW9AnnwsLR4E")
+        
         out = private_panel(_)
         await message.reply(
-    text='<blockquote><b><u>ᴅɪᴠᴇ ɪɴᴛᴏ ᴀ ᴍᴜꜱɪᴄᴀʟ ᴜɴɪᴠᴇʀꜱᴇ 🍁</u></b></blockquote>\n<blockquote><b>ɪ ᴡɪʟʟ ᴇʟᴇᴠᴀᴛᴇ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴠɪᴅᴇᴏ ᴄʜᴀᴛ ᴡɪᴛʜ ᴀᴡᴇsᴏᴍᴇ ᴍᴜsɪᴄ. ꜱᴛʀᴇᴀᴍ ᴍᴜꜱɪᴄ ᴀɴʏᴛɪᴍᴇ, ᴀɴʏᴡʜᴇʀᴇ</b></blockquote>\n<blockquote><b>Ɵᴘᴜs ᴠ2</b><a href="https://envs.sh/Pa1.mp4">.</a>0</blockquote>',
-    reply_markup=InlineKeyboardMarkup(out),
+            text='<blockquote><b><u>ᴅɪᴠᴇ ɪɴᴛᴏ ᴀ ᴍᴜꜱɪᴄᴀʟ ᴜɴɪᴠᴇʀꜱᴇ 🍁</u></b></blockquote>\n<blockquote><b>ɪ ᴡɪʟʟ ᴇʟᴇᴠᴀᴛᴇ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴠɪᴅᴇᴏ ᴄʜᴀᴛ ᴡɪᴛʜ ᴀᴡᴇsᴏᴍᴇ ᴍᴜsɪᴄ. ꜱᴛʀᴇᴀᴍ ᴍᴜꜱɪᴄ ᴀɴʏᴛɪᴍᴇ, ᴀɴʏᴡʜᴇʀᴇ</b></blockquote>\n<blockquote><b>Ɵᴘᴜs ᴠ2</b><a href="https://envs.sh/Pa1.mp4">.</a>0</blockquote>',
+            reply_markup=InlineKeyboardMarkup(out),
         )
         if await is_on_off(2):
             return await app.send_message(
