@@ -29,11 +29,11 @@ async def set_forcesub(client: Client, message: Message):
 
     if len(message.command) == 2 and message.command[1].lower() in ["off", "disable"]:
         forcesub_collection.delete_one({"chat_id": chat_id})
-        return await message.reply_text("ғᴏʀᴄᴇ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ʜᴀs ʙᴇᴇɴ �ɪsᴀʙʟᴇᴅ ғᴏʀ ᴛʜɪs ɢʀᴏᴜᴘ.")
+        return await message.reply_text("ғᴏʀᴄᴇ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ʜᴀs ʙᴇᴇɴ ᴅɪsᴀʙʟᴇᴅ ғᴏʀ ᴛʜɪs ɢʀᴏᴜᴘ.")
 
 
     if len(message.command) != 2:
-        return await message.reply_text("ᴜsᴀɢᴇ: /fsub <ᴄʜᴀɴɴᴇʟ ᴜsᴇʀɴᴀᴍᴇ ᴏʀ ɪᴅ> ᴏʀ /fsub �ғғ ᴛᴏ ᴅɪsᴀʙʟᴇ")
+        return await message.reply_text("ᴜsᴀɢᴇ: /fsub <ᴄʜᴀɴɴᴇʟ ᴜsᴇʀɴᴀᴍᴇ ᴏʀ ɪᴅ> ᴏʀ /fsub ᴏғғ ᴛᴏ ᴅɪsᴀʙʟᴇ")
 
     channel_input = message.command[1]
 
@@ -43,7 +43,7 @@ async def set_forcesub(client: Client, message: Message):
         channel_id = channel_info.id
         channel_title = channel_info.title
         channel_link = await app.export_chat_invite_link(channel_id)
-        channel_username = f"@{channel_info.username}" if channel_info.username else channel_link
+        channel_username = f"{channel_info.username}" if channel_info.username else channel_link
         channel_members_count = channel_info.members_count
 
 
@@ -60,7 +60,7 @@ async def set_forcesub(client: Client, message: Message):
                 "I'ᴍ ɴᴏᴛ ᴀɴ ᴀᴅᴍɪɴ ɪɴ ᴛʜɪs ᴄʜᴀɴɴᴇʟ.\n\n"
                 "ᴘʟᴇᴀsᴇ ᴍᴀᴋᴇ ᴍᴇ ᴀɴ ᴀᴅᴍɪɴ ᴡɪᴛʜ:\n\n"
                 "Iɴᴠɪᴛᴇ Nᴇᴡ Mᴇᴍʙᴇʀs\n\n"
-                "Tʜᴇɴ ᴜsᴇ /ғsᴜʙ <ᴄʜᴀɴɴᴇʟ �sᴇʀɴᴀᴍᴇ> ᴛᴏ sᴇᴛ ғᴏʀᴄᴇ sᴜʙsᴄʀɪᴘᴛɪᴏɴ.",
+                "Tʜᴇɴ ᴜsᴇ /fsub <ᴄʜᴀɴɴᴇʟ ᴜsᴇʀɴᴀᴍᴇ> ᴛᴏ sᴇᴛ ғᴏʀᴄᴇ sᴜʙsᴄʀɪᴘᴛɪᴏɴ.",
                 reply_markup=InlineKeyboardMarkup(
                     [[InlineKeyboardButton("ᴀᴅᴅ ᴍᴇ ɪɴ ᴄʜᴀɴɴᴇʟ", url=f"https://t.me/{app.username}?startchannel=s&admin=invite_users+manage_video_chats")]]
                 )
@@ -77,7 +77,7 @@ async def set_forcesub(client: Client, message: Message):
         await message.reply_text(
             f"ғᴏʀᴄᴇ sᴜʙsᴄʀɪᴘᴛɪᴏɴ sᴇᴛ ᴛᴏ {channel_title} ғᴏʀ ᴛʜɪs ɢʀᴏᴜᴘ.\n\n"
             f"ᴄʜᴀɴɴᴇʟ ɪᴅ: {channel_id}\n"
-            f"ᴄʜᴀɴɴᴇʟ: @{channel_username}\n"
+            f"ᴄʜᴀɴɴᴇʟ: {channel_username}\n"
             f"ᴍᴇᴍʙᴇʀ ᴄᴏᴜɴᴛ: {channel_members_count}\n"
             f"sᴇᴛ ʙʏ: {set_by_user}",
             reply_markup=InlineKeyboardMarkup(
@@ -128,8 +128,8 @@ async def check_forcesub(client: Client, message: Message):
             invite_link = await app.export_chat_invite_link(channel_id)
             channel_url = invite_link
         await message.reply_text(
-            f"👋 ʜᴇʟʟᴏ {message.from_user.mention},\n\nʏᴏᴜ ɴᴇᴇᴅ ᴛᴏ ᴊᴏɪɴ ᴛʜᴇ @{channel_username} ᴛᴏ sᴇɴᴅ ᴍᴇssᴀɢᴇs ɪɴ ᴛʜɪs ɢʀᴏᴜᴘ.",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ", url=channel_url)]]),
+            f"<blockquote><b>👋 ʜᴇʟʟᴏ {message.from_user.mention},\n\nʏᴏᴜ ɴᴇᴇᴅ ᴛᴏ ᴊᴏɪɴ ᴛᴏ sᴇɴᴅ ᴍᴇssᴀɢᴇs ɪɴ ᴛʜɪs ɢʀᴏᴜᴘ.</b></blockquote>",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("ᴊᴏɪɴ", url=channel_url)]]),
         )
     except ChatAdminRequired:
         forcesub_collection.delete_one({"chat_id": chat_id})
