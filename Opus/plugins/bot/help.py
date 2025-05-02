@@ -11,7 +11,7 @@ from Opus.utils.inline.help import help_back_markup, private_help_panel
 from config import BANNED_USERS, SUPPORT_CHAT
 from strings import get_string, helpers
 
-START_IMG_URL = "https://envs.sh/lSU.jpg"
+from config import START_IMG_URL 
 
 @app.on_message(filters.command(["help"]) & filters.private & ~BANNED_USERS)
 @app.on_callback_query(filters.regex("settings_back_helper") & ~BANNED_USERS)
