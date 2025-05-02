@@ -9,23 +9,23 @@ BOT_USERNAME = "@STORM_TECHH"
 
 def format_results(results: List[Dict]) -> str:
     formatted = []
-    emoji_ranks = ["🥇", "🥈", "🥉", "🔍", "🎯"]
-    
-    for idx, result in enumerate(results[:3], 1):
+    for result in results[:10]:
         formatted.append(
-            f"<blockquote><b>[{result['title']}](https://www.youtube.com{result['url_suffix']})</b>\n"
-            f"<b>{result['duration']} || {result['views']}</b>\n"
-            f"<b>{result['channel']}</b></blockquote>\n"
+            f"""<blockquote>
+<b><a href="https://www.youtube.com{result['url_suffix']}">{result['title']}</a></b>
+<b>{result['duration']} | {result['views']}</b>
+<b>{result['channel']}</b>
+</blockquote>"""
         )
     return "\n".join(formatted)
 
 def create_keyboard(results: List[Dict]) -> InlineKeyboardMarkup:
     buttons = []
-    for idx, result in enumerate(results[:3], 1):
+    for result in results[:5]:
         title = (result['title'][:35] + '...') if len(result['title']) > 35 else result['title']
         buttons.append(
             [InlineKeyboardButton(
-                f"{title}", 
+                title, 
                 url=f"https://www.youtube.com{result['url_suffix']}"
             )]
         )
@@ -34,23 +34,19 @@ def create_keyboard(results: List[Dict]) -> InlineKeyboardMarkup:
 @app.on_message(filters.command(["search", f"search@{BOT_USERNAME}"]))
 async def ytsearch(_, message: Message):
     try:
-
         if len(message.command) < 2:
             return await message.reply(
-              "<blockquote><b>ʏᴏᴜᴛᴜʙᴇ ꜱᴇᴀʀᴄʜ ʜᴇʟᴘ\n\n"
-              "ᴘʟᴇᴀꜱᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ꜱᴇᴀʀᴄʜ Qᴜᴇʀʏ\n"
-              "ᴇxᴀᴍᴘʟᴇ: `/search jhol`\n\n"
-              "ᴘʀᴏ ᴛɪᴘ: ᴛʀʏ ꜱᴘᴇᴄɪꜰɪᴄ Qᴜᴇʀɪᴇꜱ ꜰᴏʀ ʙᴇᴛᴛᴇʀ ʀᴇꜱᴜʟᴛꜱ</b></blockquote>",
+                "<blockquote><b>ʏᴏᴜᴛᴜʙᴇ ꜱᴇᴀʀᴄʜ ʜᴇʟᴘ</b>\n\n"
+                "ᴘʟᴇᴀꜱᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ꜱᴇᴀʀᴄʜ Qᴜᴇʀʏ\n"
+                "ᴇxᴀᴍᴘʟᴇ: <code>/search jhol</code>\n\n"
+                "ᴘʀᴏ ᴛɪᴘ: ᴛʀʏ ꜱᴘᴇᴄɪꜰɪᴄ Qᴜᴇʀɪᴇꜱ ꜰᴏʀ ʙᴇᴛᴛᴇʀ ʀᴇꜱᴜʟᴛꜱ</blockquote>",
                 reply_markup=InlineKeyboardMarkup([[
                     InlineKeyboardButton("ꜱᴜᴘᴘᴏʀᴛ", url="https://t.me/STORM_CORE")
                 ]])
             )
 
         query = message.text.split(None, 1)[1]
-        
-        search_msg = await message.reply(
-            f"✨"
-        )
+        search_msg = await message.reply("✨")
 
         try:
             results = await asyncio.wait_for(
@@ -62,21 +58,20 @@ async def ytsearch(_, message: Message):
             )
         except asyncio.TimeoutError:
             return await search_msg.edit(
-                "<blockquote><b>⏱️ ꜱᴇᴀʀᴄʜ ᴛɪᴍᴇᴏᴜᴛ\n\n"
+                "<blockquote><b>⏱️ ꜱᴇᴀʀᴄʜ ᴛɪᴍᴇᴏᴜᴛ</b>\n\n"
                 "ʏᴏᴜᴛᴜʙᴇ ᴛᴏᴏᴋ ᴛᴏᴏ ʟᴏɴɢ ᴛᴏ ʀᴇꜱᴘᴏɴᴅ.\n"
-                "ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ\n</b></blockquote>"
+                "ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ</blockquote>"
             )
 
         if not results:
             return await search_msg.edit(
-                "<blockquote><b>🔎 ɴᴏ ʀᴇꜱᴜʟᴛꜱ ꜰᴏᴜɴᴅ</b></blockquote>\n\n"
+                "<blockquote><b>🔎 ɴᴏ ʀᴇꜱᴜʟᴛꜱ ꜰᴏᴜɴᴅ</b></blockquote>"
             )
 
-        # Premium results formatting
         formatted_text = (
-            f"<blockquote><b>ʀᴇꜱᴜʟᴛꜱ: `{query}`</b></blockquote>\n\n"
-            f"<blockquote><b>{format_results(results)}</b></blockquote>\n"
-            f"<blockquote><b>{BOT_USERNAME}</b></blockquote>"
+            f"<blockquote><b>📌 ʀᴇꜱᴜʟᴛꜱ ꜰᴏʀ: {query}</b></blockquote>\n"
+            f"{format_results(results)}\n"
+            f"<blockquote><b>⚡ {BOT_USERNAME}</b></blockquote>"
         )
 
         await search_msg.edit(
@@ -86,9 +81,7 @@ async def ytsearch(_, message: Message):
         )
 
     except Exception as e:
-        error_msg = (
-            "<blockquote><b>⚠️ ꜱᴇᴀʀᴄʜ ꜰᴀɪʟᴇᴅ</b></blockquote>"
-        )
+        error_msg = "<blockquote><b>⚠️ ᴇʀʀᴏʀ: ꜱᴇᴀʀᴄʜ ꜰᴀɪʟᴇᴅ</b></blockquote>"
         if 'search_msg' in locals():
             await search_msg.edit(error_msg)
         else:
