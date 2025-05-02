@@ -31,7 +31,7 @@ REPO_PASSWORD = os.getenv("REPO_PASSWORD", None)
 SPOTIFY_CLIENT_ID = getenv("SPOTIFY_CLIENT_ID", "2d3fd5ccdd3d43dda6f17864d8eb7281")
 SPOTIFY_CLIENT_SECRET = getenv("SPOTIFY_CLIENT_SECRET", "48d311d8910a4531ae81205e1f754d27")
 
-START_IMG_URL = getenv("START_IMG_URL", "https://files.catbox.moe/ts1cz7.jpg")
+START_IMG_URL = getenv("START_IMG_URL", "https://envs.sh/lSU.jpg")
 PING_IMG_URL = getenv("PING_IMG_URL", "https://graph.org/file/9077cd2ba5818efef2d28.jpg")
 PLAYLIST_IMG_URL = getenv("PLAYLIST_IMG_URL", "https://graph.org/file/eb1e2b58e17964083db73.jpg")
 STATS_IMG_URL = getenv("STATS_IMG_URL", "https://envs.sh/Ol4.jpg")
