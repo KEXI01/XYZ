@@ -2,179 +2,133 @@ import os
 import re
 import aiofiles
 import aiohttp
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
-from unidecode import unidecode
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 from youtubesearchpython.__future__ import VideosSearch
-from Opus import app
-from config import YOUTUBE_IMG_URL
+from Opus import app 
+from config import FAILED
 
-def changeImageSize(maxWidth, maxHeight, image):
-    widthRatio = maxWidth / image.size[0]
-    heightRatio = maxHeight / image.size[1]
-    newWidth = int(widthRatio * image.size[0])
-    newHeight = int(heightRatio * image.size[1])
-    newImage = image.resize((newWidth, newHeight))
-    return newImage
+# Constants
+CACHE_DIR = "cache"
+os.makedirs(CACHE_DIR, exist_ok=True)
 
-def truncate(text, max_length=27):
-    if len(text) > max_length:
-        return text[: max_length - 1] + "…"
-    return text
+PANEL_W, PANEL_H = 763, 545
+PANEL_X = (1280 - PANEL_W) // 2
+PANEL_Y = 88
+TRANSPARENCY = 170
+INNER_OFFSET = 36
 
-def truncate_channel(text, max_length=18):
-    if len(text) > max_length:
-        return text[: max_length - 1] + "…"
-    return text
+THUMB_W, THUMB_H = 542, 273
+THUMB_X = PANEL_X + (PANEL_W - THUMB_W) // 2
+THUMB_Y = PANEL_Y + INNER_OFFSET
 
+TITLE_X = 377
+META_X = 377
+TITLE_Y = THUMB_Y + THUMB_H + 10
+META_Y = TITLE_Y + 45
 
+BAR_X, BAR_Y = 388, META_Y + 45
+BAR_RED_LEN = 280
+BAR_TOTAL_LEN = 480
 
+ICONS_W, ICONS_H = 415, 45
+ICONS_X = PANEL_X + (PANEL_W - ICONS_W) // 2
+ICONS_Y = BAR_Y + 48
 
-def crop_center_circle(img, output_size, border, crop_scale=1.5):
-    half_the_width = img.size[0] / 2
-    half_the_height = img.size[1] / 2
-    larger_size = int(output_size * crop_scale)
-    img = img.crop(
-        (
-            half_the_width - larger_size/2,
-            half_the_height - larger_size/2,
-            half_the_width + larger_size/2,
-            half_the_height + larger_size/2
-        )
-    )
-    
-    img = img.resize((output_size - 2*border, output_size - 2*border))
-    
-    
-    final_img = Image.new("RGBA", (output_size, output_size), "white")
-    
-    
-    mask_main = Image.new("L", (output_size - 2*border, output_size - 2*border), 0)
-    draw_main = ImageDraw.Draw(mask_main)
-    draw_main.ellipse((0, 0, output_size - 2*border, output_size - 2*border), fill=255)
-    
-    final_img.paste(img, (border, border), mask_main)
-    
-    
-    mask_border = Image.new("L", (output_size, output_size), 0)
-    draw_border = ImageDraw.Draw(mask_border)
-    draw_border.ellipse((0, 0, output_size, output_size), fill=255)
-    
-    result = Image.composite(final_img, Image.new("RGBA", final_img.size, (0, 0, 0, 0)), mask_border)
-    
-    return result
+MAX_TITLE_WIDTH = 580
 
+def trim_to_width(text: str, font: ImageFont.FreeTypeFont, max_w: int) -> str:
+    ellipsis = "…"
+    if font.getlength(text) <= max_w:
+        return text
+    for i in range(len(text) - 1, 0, -1):
+        if font.getlength(text[:i] + ellipsis) <= max_w:
+            return text[:i] + ellipsis
+    return ellipsis
 
-def crop_center_square(img, output_size, crop_scale=1.0):
-    half_the_width = img.size[0] / 2
-    half_the_height = img.size[1] / 2
-    larger_size = int(output_size * crop_scale)
+async def get_thumb(videoid: str) -> str:
+    cache_path = os.path.join(CACHE_DIR, f"{videoid}_v4.png")
+    if os.path.exists(cache_path):
+        return cache_path
 
-    # Square crop
-    img = img.crop((
-        half_the_width - larger_size / 2,
-        half_the_height - larger_size / 2,
-        half_the_width + larger_size / 2,
-        half_the_height + larger_size / 2
-    ))
-
-    img = img.resize((output_size, output_size))
-
-    # Create a mask with rounded corners
-    mask = Image.new("L", (output_size, output_size), 0)
-    draw = ImageDraw.Draw(mask)
-    draw.rounded_rectangle((0, 0, output_size, output_size), radius=10, fill=255)
-
-    # Apply the mask
-    rounded_square = Image.new("RGBA", (output_size, output_size), (0, 0, 0, 0))
-    rounded_square.paste(img, (0, 0), mask)
-
-    return rounded_square
-
-
-
-async def get_thumb(videoid):
-    if os.path.isfile(f"cache/{videoid}_v4.png"):
-        return f"cache/{videoid}_v4.png"
-
-    url = f"https://www.youtube.com/watch?v={videoid}"
-    results = VideosSearch(url, limit=1)
-    for result in (await results.next())["result"]:
-        try:
-            title = result["title"]
-            title = re.sub("\W+", " ", title)
-            title = title.title()
-        except:
-            title = "Unsupported Title"
-        try:
-            duration = result["duration"]
-        except:
-            duration = "Unknown Mins"
-        thumbnail = result["thumbnails"][0]["url"].split("?")[0]
-        try:
-            views = result["viewCount"]["short"]
-        except:
-            views = "Unknown Views"
-        try:
-            channel = result["channel"]["name"]
-        except:
-            channel = "Unknown Channel"
-
-    async with aiohttp.ClientSession() as session:
-        async with session.get(thumbnail) as resp:
-            if resp.status == 200:
-                f = await aiofiles.open(f"cache/thumb{videoid}.png", mode="wb")
-                await f.write(await resp.read())
-                await f.close()
-
-    youtube = Image.open(f"cache/thumb{videoid}.png")
-    image1 = changeImageSize(1280, 720, youtube)
-    image2 = image1.convert("RGBA")
-    background = image2.filter(filter=ImageFilter.BoxBlur(20))
-    enhancer = ImageEnhance.Brightness(background)
-    background = enhancer.enhance(0.6)
-    draw = ImageDraw.Draw(background)
-
-    title_font = ImageFont.truetype("src/assets/semibold.ttf", 28)
-    channel_name_font = ImageFont.truetype("src/assets/semibold.ttf", 20)
-    duration_font = ImageFont.truetype("src/assets/semibold.ttf", 18)
-
-
-    # Load your image
-    my_image = Image.open("src/assets/bg.png").convert("RGBA")
-
-    # Resize if needed
-    my_image = my_image.resize((1280, 720))
-
-    # Calculate center position
-    bg_width, bg_height = background.size
-    img_width, img_height = my_image.size
-    center_x = (bg_width - img_width) // 2
-    center_y = (bg_height - img_height) // 2
-
-    # Paste image at center
-    background.paste(my_image, (center_x, center_y), my_image)
-
-    square_thumbnail = crop_center_square(youtube, 200)
-    square_thumbnail = square_thumbnail.resize((190, 190))
-    square_position = (302, 188)
-    background.paste(square_thumbnail, square_position, square_thumbnail)
-
-    # Video Title
-
-    text_x_position = 520
-
-    draw.text((text_x_position, 240), truncate(title), font=title_font, fill="white")
-    draw.text((text_x_position, 290), truncate_channel(channel), (255, 255, 255), font=channel_name_font)
-
-    
-    draw.text((930, 440), f"-{duration}", (174, 174, 174), font=duration_font)
-
-    background = background.convert("RGB")
-
-
+    # YouTube video data fetch
+    results = VideosSearch(f"https://www.youtube.com/watch?v={videoid}", limit=1)
     try:
-        os.remove(f"cache/thumb{videoid}.png")
-    except:
+        results_data = await results.next()
+        result_items = results_data.get("result", [])
+        if not result_items:
+            raise ValueError("No results found.")
+        data = result_items[0]
+        title = re.sub(r"\W+", " ", data.get("title", "Unsupported Title")).title()
+        thumbnail = data.get("thumbnails", [{}])[0].get("url", FAILED)
+        duration = data.get("duration")
+        views = data.get("viewCount", {}).get("short", "Unknown Views")
+    except Exception:
+        title, thumbnail, duration, views = "Unsupported Title", FAILED, None, "Unknown Views"
+
+    is_live = not duration or str(duration).strip().lower() in {"", "live", "live now"}
+    duration_text = "Live" if is_live else duration or "Unknown Mins"
+
+    # Download thumbnail
+    thumb_path = os.path.join(CACHE_DIR, f"thumb{videoid}.png")
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(thumbnail) as resp:
+                if resp.status == 200:
+                    async with aiofiles.open(thumb_path, "wb") as f:
+                        await f.write(await resp.read())
+    except Exception:
+        return FAILED
+
+    # Create base image
+    base = Image.open(thumb_path).resize((1280, 720)).convert("RGBA")
+    bg = ImageEnhance.Brightness(base.filter(ImageFilter.BoxBlur(10))).enhance(0.6)
+
+    # Frosted glass panel
+    panel_area = bg.crop((PANEL_X, PANEL_Y, PANEL_X + PANEL_W, PANEL_Y + PANEL_H))
+    overlay = Image.new("RGBA", (PANEL_W, PANEL_H), (255, 255, 255, TRANSPARENCY))
+    frosted = Image.alpha_composite(panel_area, overlay)
+    mask = Image.new("L", (PANEL_W, PANEL_H), 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, PANEL_W, PANEL_H), 50, fill=255)
+    bg.paste(frosted, (PANEL_X, PANEL_Y), mask)
+
+    # Draw details
+    draw = ImageDraw.Draw(bg)
+    try:
+        title_font = ImageFont.truetype("src/assets//font2.ttf", 32)
+        regular_font = ImageFont.truetype("src/assets//font.ttf", 18)
+    except OSError:
+        title_font = regular_font = ImageFont.load_default()
+
+    thumb = base.resize((THUMB_W, THUMB_H))
+    tmask = Image.new("L", thumb.size, 0)
+    ImageDraw.Draw(tmask).rounded_rectangle((0, 0, THUMB_W, THUMB_H), 20, fill=255)
+    bg.paste(thumb, (THUMB_X, THUMB_Y), tmask)
+
+    draw.text((TITLE_X, TITLE_Y), trim_to_width(title, title_font, MAX_TITLE_WIDTH), fill="black", font=title_font)
+    draw.text((META_X, META_Y), f"YouTube | {views}", fill="black", font=regular_font)
+
+    # Progress bar
+    draw.line([(BAR_X, BAR_Y), (BAR_X + BAR_RED_LEN, BAR_Y)], fill="red", width=6)
+    draw.line([(BAR_X + BAR_RED_LEN, BAR_Y), (BAR_X + BAR_TOTAL_LEN, BAR_Y)], fill="gray", width=5)
+    draw.ellipse([(BAR_X + BAR_RED_LEN - 7, BAR_Y - 7), (BAR_X + BAR_RED_LEN + 7, BAR_Y + 7)], fill="red")
+
+    draw.text((BAR_X, BAR_Y + 15), "00:00", fill="black", font=regular_font)
+    end_text = "Live" if is_live else duration_text
+    draw.text((BAR_X + BAR_TOTAL_LEN - (90 if is_live else 60), BAR_Y + 15), end_text, fill="red" if is_live else "black", font=regular_font)
+
+    # Icons
+    icons_path = "src/assets/play_icons.png"
+    if os.path.isfile(icons_path):
+        ic = Image.open(icons_path).resize((ICONS_W, ICONS_H)).convert("RGBA")
+        r, g, b, a = ic.split()
+        black_ic = Image.merge("RGBA", (r.point(lambda *_: 0), g.point(lambda *_: 0), b.point(lambda *_: 0), a))
+        bg.paste(black_ic, (ICONS_X, ICONS_Y), black_ic)
+
+    # Cleanup and save
+    try:
+        os.remove(thumb_path)
+    except OSError:
         pass
-    background.save(f"cache/{videoid}_v4.png")
-    return f"cache/{videoid}_v4.png"
+
+    bg.save(cache_path)
+    return cache_path
