@@ -84,7 +84,7 @@ async def start_pm(client, message: Message, _):
         
         out = private_panel(_)
         await message.reply(
-            text='<blockquote><b><u>ᴅɪᴠᴇ ɪɴᴛᴏ ᴀ ᴍᴜꜱɪᴄᴀʟ ᴜɴɪᴠᴇʀꜱᴇ 🍁</u></b></blockquote>\n<blockquote><b>ɪ ᴡɪʟʟ ᴇʟᴇᴠᴀᴛᴇ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴠɪᴅᴇᴏ ᴄʜᴀᴛ ᴡɪᴛʜ ᴀᴡᴇsᴏᴍᴇ ᴍᴜsɪᴄ. ꜱᴛʀᴇᴀᴍ ᴍᴜꜱɪᴄ ᴀɴʏᴛɪᴍᴇ, ᴀɴʏᴡʜᴇʀᴇ\n/help ꜰᴏʀ ᴄᴏᴍᴍᴀɴᴅꜱ</b></blockquote>\n<blockquote><b>Ɵᴘᴜs ᴠ2</b><a href="https://envs.sh/Pa1.mp4">.</a>0</blockquote>',
+            text='<blockquote><b><u>ᴅɪᴠᴇ ɪɴᴛᴏ ᴀ ᴍᴜꜱɪᴄᴀʟ ᴜɴɪᴠᴇʀꜱᴇ 🍁</u></b></blockquote>\n<blockquote><b>ɪ ᴡɪʟʟ ᴇʟᴇᴠᴀᴛᴇ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴠɪᴅᴇᴏ ᴄʜᴀᴛ ᴡɪᴛʜ ᴀᴡᴇsᴏᴍᴇ ᴍᴜsɪᴄ. ꜱᴛʀᴇᴀᴍ ᴍᴜꜱɪᴄ ᴀɴʏᴛɪᴍᴇ, ᴀɴʏᴡʜᴇʀᴇ\n/help ꜰᴏʀ ᴄᴏᴍᴍᴀɴᴅꜱ</b></blockquote>\n<blockquote><b>ꜰᴏʀ ᴜᴘᴅᴀᴛᴇꜱ @OpusAlertsBot\nƟᴘᴜs ᴠ2</b><a href="https://envs.sh/Pa1.mp4">.</a>0</blockquote>',
             reply_markup=InlineKeyboardMarkup(out),
         )
         if await is_on_off(2):
