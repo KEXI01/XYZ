@@ -24,7 +24,7 @@ from Opus.utils.logger import play_logs
 from Opus.utils.stream.stream import stream
 from config import BANNED_USERS, lyrical
 
-sticker_id = "CAACAgUAAxkBAAKVsmgiHizaRAbAg6U9eFzGFl4wD_tFAAJ9DgACQhkhVIv1nwf4t8T8HgQ"
+sticker_id = "CAACAgQAAxkBAAKVyWgiJuZp9mYayqB5RF9NbOOShfhiAAJaFwACk28RUV8Y32sv5D6oHgQ"
 
 @app.on_message(
     filters.command(
