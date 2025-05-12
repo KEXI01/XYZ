@@ -85,7 +85,7 @@ async def get_thumb(videoid: str) -> str:
 
     # Frosted glass panel
     panel_area = bg.crop((PANEL_X, PANEL_Y, PANEL_X + PANEL_W, PANEL_Y + PANEL_H))
-    overlay = Image.new("RGBA", (PANEL_W, PANEL_H), (100, 100, 100, TRANSPARENCY))
+    overlay = Image.new("RGBA", (PANEL_W, PANEL_H), (255, 255, 255, TRANSPARENCY))
     frosted = Image.alpha_composite(panel_area, overlay)
     mask = Image.new("L", (PANEL_W, PANEL_H), 0)
     ImageDraw.Draw(mask).rounded_rectangle((0, 0, PANEL_W, PANEL_H), 50, fill=255)
