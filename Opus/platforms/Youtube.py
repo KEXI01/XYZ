@@ -15,8 +15,8 @@ from Opus.utils.database import is_on_off
 from Opus.utils.formatters import time_to_seconds
 
 APIS = [
-    {"url": "http://46.250.243.87:1470/youtube", "key": "1a873582a7c83342f961cc0a177b2b26"},
-    {"url": "http://yt.sanatanixtech.site", "key": "SANATANIxTECH"}
+    {"url": "https://sp.ashok.sbs", "key": "bf4165_ZMGMPWRYW8PLeZ6cZ7mFgf52mK1LjCOc"},
+    {"url": "https://sp.ashok.sbs", "key": "11c670_Yr4BHT54qE9HUXblsVBpWXWG9Z-0zuMo"}
 ]
 
 def cookie_txt_file():
