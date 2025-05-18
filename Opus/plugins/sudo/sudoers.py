@@ -7,6 +7,7 @@ from Opus.utils.database import add_sudo, remove_sudo
 from Opus.utils.decorators.language import language
 from Opus.utils.extraction import extract_user
 from Opus.utils.inline import close_markup
+from Opus.misc import SUDOERS
 from config import BANNED_USERS, OWNER_ID
 
 
@@ -44,7 +45,7 @@ async def userdel(client, message: Message, _):
         await message.reply_text(_["sudo_8"])
 
 
-@app.on_message(filters.command(["sudolist", "listsudo", "sudoers"]) & ~BANNED_USERS)
+@app.on_message(filters.command(["sudolist"]) & SUDOERS)
 @language
 async def sudoers_list(client, message: Message, _):
     text = _["sudo_5"]
