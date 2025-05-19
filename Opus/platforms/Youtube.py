@@ -15,8 +15,6 @@ from Opus.utils.database import is_on_off
 from Opus.utils.formatters import time_to_seconds
 
 APIS = [
-    {"url": "https://sp.ashok.sbs", "key": "3ef99e_3pwgOlZyuZXZL43QdkDzWMxQRe0yk-lB"},
-    {"url": "https://sp.ashok.sbs", "key": "11c670_Yr4BHT54qE9HUXblsVBpWXWG9Z-0zuMo"},
     {"url": "https://sp.ashok.sbs", "key": "2b6222_6XK_mvLqkNzgfAaepNeX1f0SBDUan1vK"},
     {"url": "https://sp.ashok.sbs", "key": "34dc78_AbcZpQpBVQLrEAiBsVsLjzSZmAxCe7fj"}
 ]
