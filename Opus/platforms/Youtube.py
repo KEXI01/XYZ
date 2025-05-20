@@ -18,7 +18,6 @@ from youtubesearchpython.__future__ import VideosSearch
 from Opus.utils.database import is_on_off
 from Opus.utils.formatters import time_to_seconds
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -26,7 +25,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def cookie_txt_file() -> str:
-    """Get a random cookie file from the cookies directory."""
     try:
         folder_path = os.path.join(os.getcwd(), "cookies")
         os.makedirs(folder_path, exist_ok=True)
@@ -47,7 +45,6 @@ def cookie_txt_file() -> str:
         raise
 
 async def check_file_size(link: str) -> Optional[int]:
-    """Check the total file size of all formats for a YouTube link."""
     async def get_format_info(link: str) -> Optional[dict]:
         try:
             proc = await asyncio.create_subprocess_exec(
@@ -93,7 +90,6 @@ async def check_file_size(link: str) -> Optional[int]:
         return None
 
 async def shell_cmd(cmd: str) -> str:
-    """Execute a shell command and return its output."""
     try:
         proc = await asyncio.create_subprocess_shell(
             cmd,
@@ -114,7 +110,6 @@ async def shell_cmd(cmd: str) -> str:
         raise
 
 class YouTubeAPI:
-    """Main YouTube API handler with both cookie-based and API downloads."""
     
     def __init__(self):
         self.base = "https://www.youtube.com/watch?v="
@@ -122,14 +117,11 @@ class YouTubeAPI:
         self.status = "https://www.youtube.com/oembed?url="
         self.listbase = "https://youtube.com/playlist?list="
         self.reg = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
-        
-        # Audio API endpoint (base64 encoded)
         self._audio_api = base64.b64decode(
             "aHR0cHM6Ly9iaWxsYWF4LnNodWtsYWt1c3VtNHEud29ya2Vycy5kZXYvYXJ5dG1wMz9kaXJlY3QmaWQ9"
         ).decode('utf-8')
 
     async def exists(self, link: str, videoid: bool = False) -> bool:
-        """Check if a YouTube link exists."""
         try:
             if videoid:
                 link = self.base + link
@@ -139,14 +131,12 @@ class YouTubeAPI:
             return False
 
     async def url(self, message: Message) -> Optional[str]:
-        """Extract URL from a Pyrogram message."""
         try:
             messages = [message]
             if message.reply_to_message:
                 messages.append(message.reply_to_message)
                 
             for msg in messages:
-                # Check entities first
                 if msg.entities:
                     for entity in msg.entities:
                         if entity.type == MessageEntityType.URL:
@@ -154,7 +144,6 @@ class YouTubeAPI:
                             if text:
                                 return text[entity.offset:entity.offset + entity.length]
                 
-                # Check caption entities if no URL found
                 if msg.caption_entities:
                     for entity in msg.caption_entities:
                         if entity.type == MessageEntityType.TEXT_LINK:
@@ -166,7 +155,6 @@ class YouTubeAPI:
             return None
 
     async def details(self, link: str, videoid: bool = False) -> Tuple[str, str, int, str, str]:
-        """Get video details (title, duration, thumbnail, etc.)."""
         default_return = ("", "0:00", 0, "", "")
         
         try:
@@ -197,7 +185,6 @@ class YouTubeAPI:
             return default_return
 
     async def title(self, link: str, videoid: bool = False) -> str:
-        """Get video title."""
         try:
             title, *_ = await self.details(link, videoid)
             return title
@@ -206,7 +193,6 @@ class YouTubeAPI:
             return ""
 
     async def duration(self, link: str, videoid: bool = False) -> str:
-        """Get video duration."""
         try:
             _, duration, *_ = await self.details(link, videoid)
             return duration
@@ -215,7 +201,6 @@ class YouTubeAPI:
             return "0:00"
 
     async def thumbnail(self, link: str, videoid: bool = False) -> str:
-        """Get video thumbnail URL."""
         try:
             *_, thumbnail, _ = await self.details(link, videoid)
             return thumbnail
@@ -224,7 +209,6 @@ class YouTubeAPI:
             return ""
 
     async def video(self, link: str, videoid: bool = False) -> Tuple[int, str]:
-        """Get direct video URL."""
         try:
             if videoid:
                 link = self.base + link
@@ -251,7 +235,6 @@ class YouTubeAPI:
             return 0, str(e)
 
     async def playlist(self, link: str, limit: int, user_id: int, videoid: bool = False) -> List[str]:
-        """Get list of video IDs from a playlist."""
         try:
             if videoid:
                 link = self.listbase + link
@@ -271,7 +254,6 @@ class YouTubeAPI:
             return []
 
     async def track(self, link: str, videoid: bool = False) -> Tuple[Dict[str, str], str]:
-        """Get track details."""
         default_return = ({
             "title": "",
             "link": "",
@@ -308,7 +290,6 @@ class YouTubeAPI:
             return default_return
 
     async def formats(self, link: str, videoid: bool = False) -> Tuple[List[Dict[str, str]], str]:
-        """Get available formats for a video."""
         try:
             if videoid:
                 link = self.base + link
@@ -352,7 +333,6 @@ class YouTubeAPI:
         query_type: int,
         videoid: bool = False
     ) -> Tuple[str, str, str, str]:
-        """Get slider details for query results."""
         default_return = ("", "0:00", "", "")
         
         try:
@@ -380,7 +360,6 @@ class YouTubeAPI:
             return default_return
 
     async def _download_audio_from_api(self, video_id: str) -> Optional[str]:
-        """Download audio from external API."""
         file_path = os.path.join("downloads", f"{video_id}.mp3")
         
         try:
@@ -422,7 +401,6 @@ class YouTubeAPI:
         format_id: Optional[str] = None,
         title: Optional[str] = None,
     ) -> Tuple[Optional[str], bool]:
-        """Main download method with multiple download options."""
         try:
             if videoid:
                 link = self.base + link
@@ -430,7 +408,6 @@ class YouTubeAPI:
             loop = asyncio.get_running_loop()
 
             def audio_dl() -> str:
-                """Download audio using yt-dlp."""
                 ydl_opts = {
                     "format": "bestaudio/best",
                     "outtmpl": "downloads/%(id)s.%(ext)s",
@@ -448,7 +425,6 @@ class YouTubeAPI:
                     return file_path
 
             def video_dl() -> str:
-                """Download video using yt-dlp."""
                 ydl_opts = {
                     "format": "(bestvideo[height<=?720][width<=?1280][ext=mp4])+(bestaudio[ext=m4a])",
                     "outtmpl": "downloads/%(id)s.%(ext)s",
@@ -465,7 +441,6 @@ class YouTubeAPI:
                         ydl.download([link])
                     return file_path
 
-            # Handle song video download
             if songvideo:
                 if not title or not format_id:
                     raise ValueError("Title and format_id are required for song video download")
@@ -488,7 +463,6 @@ class YouTubeAPI:
                 await loop.run_in_executor(None, song_video_dl)
                 return f"downloads/{title}.mp4", True
 
-            # Handle song audio download
             elif songaudio:
                 if not title or not format_id:
                     raise ValueError("Title and format_id are required for song audio download")
@@ -515,14 +489,11 @@ class YouTubeAPI:
                 await loop.run_in_executor(None, song_audio_dl)
                 return f"downloads/{title}.mp3", True
 
-            # Handle regular video download
             elif video:
                 if await is_on_off(1):
-                    # Direct download
                     downloaded_file = await loop.run_in_executor(None, video_dl)
                     return downloaded_file, True
                 else:
-                    # Try to get stream URL first
                     proc = await asyncio.create_subprocess_exec(
                         "yt-dlp",
                         "--cookies", cookie_txt_file(),
@@ -538,7 +509,6 @@ class YouTubeAPI:
                     if proc.returncode == 0 and stdout:
                         return stdout.decode().strip().split("\n")[0], False
                     
-                    # Fallback to direct download if streaming fails
                     file_size = await check_file_size(link)
                     if file_size is None:
                         logger.error("Failed to get file size")
@@ -551,14 +521,12 @@ class YouTubeAPI:
                     downloaded_file = await loop.run_in_executor(None, video_dl)
                     return downloaded_file, True
             else:
-                # Try audio API first
                 video_id = self._extract_video_id(link)
                 if video_id:
                     api_file = await self._download_audio_from_api(video_id)
                     if api_file:
                         return api_file, True
                 
-                # Fallback to cookie-based download
                 downloaded_file = await loop.run_in_executor(None, audio_dl)
                 return downloaded_file, True
 
@@ -567,7 +535,6 @@ class YouTubeAPI:
             return None, False
 
     def _extract_video_id(self, link: str) -> Optional[str]:
-        """Extract video ID from various YouTube URL formats."""
         patterns = [
             r"(?:v=|youtu\.be/|youtube\.com/(?:embed/|v/|watch\?v=))([0-9A-Za-z_-]{11})",
             r"youtube\.com/watch\?.*v=([0-9A-Za-z_-]{11})",
