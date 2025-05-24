@@ -16,6 +16,7 @@ import glob
 import random
 import logging
 import aiohttp
+import base64
 
 def cookie_txt_file():
     folder_path = f"{os.getcwd()}/cookies"
@@ -84,6 +85,17 @@ class YouTubeAPI:
         self.status = "https://www.youtube.com/oembed?url="
         self.listbase = "https://youtube.com/playlist?list="
         self.reg = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+        # Encoded API URLs
+        self._api_urls = [
+            base64.b64decode("aHR0cHM6Ly9uYXJheWFuLnNpdmVuZHJhc3Rvcm0ud29ya2Vycy5kZXYvYXJ5dG1wMz9kaXJlY3QmaWQ9").decode("utf-8"),
+            base64.b64decode("aHR0cHM6Ly9iaWxsYWF4LnNodWtsYWt1c3VtNHEud29ya2Vycy5kZXYvP2lkPQ==").decode("utf-8")
+        ]
+        self._current_api_index = 0
+
+    def _get_api_url(self, video_id: str) -> str:
+        url = self._api_urls[self._current_api_index] + video_id
+        self._current_api_index = (self._current_api_index + 1) % len(self._api_urls)
+        return url
 
     async def exists(self, link: str, videoid: Union[bool, str] = None):
         if videoid:
@@ -277,6 +289,33 @@ class YouTubeAPI:
         thumbnail = result[query_type]["thumbnails"][0]["url"].split("?")[0]
         return title, duration_min, thumbnail, vidid
 
+    async def _download_from_api(self, video_id: str) -> str:
+        file_path = os.path.join("downloads", f"{video_id}.mp3")
+
+        if os.path.exists(file_path):
+            print(f"{file_path} already exists. Skipping download.")
+            return file_path
+
+        for attempt in range(2): 
+            api_url = self._get_api_url(video_id)
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(api_url, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                        if response.status == 200:
+                            os.makedirs("downloads", exist_ok=True)
+                            with open(file_path, 'wb') as f:
+                                async for chunk in response.content.iter_chunked(8192):
+                                    f.write(chunk)
+                            print(f"Successfully downloaded from API: {file_path}")
+                            return file_path
+                        else:
+                            print(f"API request failed with status {response.status}")
+            except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                print(f"API download attempt failed: {str(e)}")
+
+        print("All API attempts failed")
+        return None
+
     async def download(
         self,
         link: str,
@@ -291,38 +330,6 @@ class YouTubeAPI:
         if videoid:
             link = self.base + link
         loop = asyncio.get_running_loop()
-
-        async def api_dl(video_id: str) -> str:
-            api_url = f"https://billaax.shuklakusum4q.workers.dev/arytmp3?direct&id={video_id}"
-            file_path = os.path.join("downloads", f"{video_id}.mp3")
-
-            # Check if file already exists
-            if os.path.exists(file_path):
-                print(f"{file_path} already exists. Skipping download.")
-                return file_path
-
-            try:
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(api_url) as response:
-                        if response.status == 200:
-                            os.makedirs("downloads", exist_ok=True)
-                            with open(file_path, 'wb') as f:
-                                while True:
-                                    chunk = await response.content.read(8192)
-                                    if not chunk:
-                                        break
-                                    f.write(chunk)
-                            print(f"Downloaded {file_path}")
-                            return file_path
-                        else:
-                            print(f"Failed to download {video_id}. Status: {response.status}")
-                            return None
-            except aiohttp.ClientError as e:
-                print(f"Error downloading {video_id}: {e}")
-                # Cleanup if download fails
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                return None
 
         def audio_dl():
             ydl_optssx = {
@@ -439,15 +446,14 @@ class YouTubeAPI:
                     downloaded_file = await loop.run_in_executor(None, video_dl)
         else:
             direct = True
-            # Extract video ID from link
+
             video_id_pattern = r"(?:v=|youtu\.be/|youtube\.com/(?:embed/|v/|watch\?v=))([0-9A-Za-z_-]{11})"
             match = re.search(video_id_pattern, link)
             if match:
                 video_id = match.group(1)
-                # Try API download first
-                downloaded_file = await api_dl(video_id)
+                downloaded_file = await self._download_from_api(video_id)
                 if downloaded_file:
                     return downloaded_file, direct
-            # Fallback to cookie-based download if API fails
+        
             downloaded_file = await loop.run_in_executor(None, audio_dl)
         return downloaded_file, direct
