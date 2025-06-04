@@ -10,12 +10,11 @@ from functools import lru_cache
 from cachetools import TTLCache
 import aiohttp
 import base64
-
+import time
 import yt_dlp
 from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message
 from youtubesearchpython.__future__ import VideosSearch
-
 from Opus.utils.database import is_on_off
 from Opus.utils.formatters import time_to_seconds
 
@@ -23,7 +22,7 @@ from Opus.utils.formatters import time_to_seconds
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-# Initialize cache (TTL of 1 hour for metadata, 10 minutes for file sizes)
+# Initialize caches
 metadata_cache = TTLCache(maxsize=1000, ttl=3600)
 file_size_cache = TTLCache(maxsize=100, ttl=600)
 
@@ -32,41 +31,58 @@ class YouTubeAPI:
         self.base = "https://www.youtube.com/watch?v="
         self.listbase = "https://youtube.com/playlist?list="
         self.regex = re.compile(r"(?:youtube\.com|youtu\.be)")
-        self.video_id_pattern = re.compile(r"(?:v=|youtu\.be/|youtube\.com/(?:embed/|vinitely/|watch\?v=))([0-9A-Za-z_-]{11})")
+        self.video_id_pattern = re.compile(r"(?:v=|youtu\.be/|youtube\.com/(?:embed/|v/|watch\?v=))([0-9A-Za-z_-]{11})")
         self._api_urls = [
             base64.b64decode("aHR0cHM6Ly9uYXJheWFuLnNpdmVuZHJhc3Rvcm0ud29ya2Vycy5kZXYvYXJ5dG1wMz9kaXJlY3QmaWQ9").decode("utf-8"),
             base64.b64decode("aHR0cHM6Ly9iaWxsYWF4LnNodWtsYWt1c3VtNHEud29ya2Vycy5kZXYvP2lkPQ==").decode("utf-8")
         ]
-        self._session = None  # Will initialize in async context
-        self._cookie_file = self._load_cookie_file()
+        self._session = None  # Lazy initialization in _ensure_session
+        self._cookie_files = self._load_cookie_files()
+        self._current_cookie_index = 0
         self._ytdl_opts = {
             "quiet": True,
-            "cookiefile": self._cookie_file,
+            "cookiefile": self._get_current_cookie_file(),
             "geo_bypass": True,
             "nocheckcertificate": True,
             "no_warnings": True,
         }
 
-    def _load_cookie_file(self) -> str:
-        """Load a random cookie file and cache it."""
+    def _load_cookie_files(self) -> List[str]:
+        """Load all cookie files and validate them."""
         folder_path = f"{os.getcwd()}/cookies"
         filename = f"{os.getcwd()}/cookies/logs.csv"
         txt_files = glob.glob(os.path.join(folder_path, '*.txt'))
         if not txt_files:
             raise FileNotFoundError("No .txt files found in the specified folder.")
-        cookie_file = random.choice(txt_files)
         with open(filename, 'a') as file:
-            file.write(f'Choosen File: {cookie_file}\n')
-        return cookie_file
+            for txt_file in txt_files:
+                file.write(f'Loaded Cookie File: {txt_file}\n')
+        return txt_files
+
+    def _get_current_cookie_file(self) -> str:
+        """Get the current cookie file."""
+        return self._cookie_files[self._current_cookie_index]
+
+    def _cycle_cookie_file(self):
+        """Cycle to the next cookie file."""
+        self._current_cookie_index = (self._current_cookie_index + 1) % len(self._cookie_files)
+        self._ytdl_opts["cookiefile"] = self._get_current_cookie_file()
+        logger.info(f"Switched to cookie file: {self._ytdl_opts['cookiefile']}")
+
+    async def _ensure_session(self):
+        """Ensure aiohttp session is initialized."""
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession()
+        return self._session
 
     async def __aenter__(self):
         """Initialize aiohttp session."""
-        self._session = aiohttp.ClientSession()
+        await self._ensure_session()
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
         """Close aiohttp session."""
-        if self._session:
+        if self._session and not self._session.closed:
             await self._session.close()
 
     @lru_cache(maxsize=100)
@@ -104,24 +120,30 @@ class YouTubeAPI:
     async def _fetch_video_metadata(self, link: str) -> Dict:
         """Fetch and cache video metadata."""
         link = self._clean_url(link)
-        results = VideosSearch(link, limit=1)
-        result = (await results.next())["result"][0]
-        duration_min = result["duration"]
-        duration_sec = 0 if duration_min == "None" else int(time_to_seconds(duration_min))
-        return {
-            "title": result["title"],
-            "duration_min": duration_min,
-            "duration_sec": duration_sec,
-            "thumbnail": result["thumbnails"][0]["url"].split("?")[0],
-            "vidid": result["id"],
-            "link": result["link"]
-        }
+        try:
+            results = VideosSearch(link, limit=1)
+            result = (await results.next())["result"][0]
+            duration_min = result["duration"]
+            duration_sec = 0 if duration_min == "None" else int(time_to_seconds(duration_min))
+            return {
+                "title": result["title"],
+                "duration_min": duration_min,
+                "duration_sec": duration_sec,
+                "thumbnail": result["thumbnails"][0]["url"].split("?")[0],
+                "vidid": result["id"],
+                "link": result["link"]
+            }
+        except Exception as e:
+            logger.error(f"Failed to fetch metadata for {link}: {str(e)}")
+            return {}
 
     async def details(self, link: str, videoid: Union[bool, str] = None) -> Tuple[str, str, int, str, str]:
         """Get video details."""
         if videoid:
             link = self.base + link
         metadata = await self._fetch_video_metadata(link)
+        if not metadata:
+            return "", "", 0, "", ""
         return (
             metadata["title"],
             metadata["duration_min"],
@@ -135,44 +157,53 @@ class YouTubeAPI:
         if videoid:
             link = self.base + link
         metadata = await self._fetch_video_metadata(link)
-        return metadata["title"]
+        return metadata.get("title", "")
 
     async def duration(self, link: str, videoid: Union[bool, str] = None) -> str:
         """Get video duration."""
         if videoid:
             link = self.base + link
         metadata = await self._fetch_video_metadata(link)
-        return metadata["duration_min"]
+        return metadata.get("duration_min", "")
 
     async def thumbnail(self, link: str, videoid: Union[bool, str] = None) -> str:
         """Get video thumbnail."""
         if videoid:
             link = self.base + link
         metadata = await self._fetch_video_metadata(link)
-        return metadata["thumbnail"]
+        return metadata.get("thumbnail", "")
 
     async def video(self, link: str, videoid: Union[bool, str] = None) -> Tuple[int, str]:
         """Get video stream URL."""
         if videoid:
             link = self.base + link
         link = self._clean_url(link)
-        ydl = yt_dlp.YoutubeDL(self._ytdl_opts)
-        try:
-            info = ydl.extract_info(link, download=False)
-            for format in info["formats"]:
-                if "height" in format and format["height"] <= 720 and format["width"] <= 1280:
-                    return 1, format["url"]
-            return 0, "No suitable format found"
-        except Exception as e:
-            logger.error(f"Error fetching video stream: {str(e)}")
-            return 0, str(e)
+        for _ in range(len(self._cookie_files)):  # Try all cookie files
+            ydl = yt_dlp.YoutubeDL(self._ytdl_opts)
+            try:
+                info = ydl.extract_info(link, download=False)
+                for format in info["formats"]:
+                    if "height" in format and format["height"] <= 720 and format["width"] <= 1280:
+                        return 1, format["url"]
+                return 0, "No suitable format found"
+            except yt_dlp.utils.DownloadError as e:
+                if "unavailable" in str(e).lower():
+                    logger.warning(f"Video unavailable with current cookie: {str(e)}")
+                    self._cycle_cookie_file()
+                    continue
+                logger.error(f"Error fetching video stream: {str(e)}")
+                return 0, str(e)
+            except Exception as e:
+                logger.error(f"Unexpected error fetching video stream: {str(e)}")
+                return 0, str(e)
+        return 0, "Video unavailable after trying all cookies"
 
     async def playlist(self, link: str, limit: int, user_id: int, videoid: Union[bool, str] = None) -> List[str]:
         """Get playlist video IDs concurrently."""
         if videoid:
             link = self.listbase + link
         link = self._clean_url(link)
-        cmd = f"yt-dlp -i --get-id --flat-playlist --cookies {self._cookie_file} --playlist-end {limit} --skip-download {link}"
+        cmd = f"yt-dlp -i --get-id --flat-playlist --cookies {self._get_current_cookie_file()} --playlist-end {limit} --skip-download {link}"
         try:
             result = await self._shell_cmd(cmd)
             video_ids = [id for id in result.split("\n") if id]
@@ -187,13 +218,13 @@ class YouTubeAPI:
             link = self.base + link
         metadata = await self._fetch_video_metadata(link)
         track_details = {
-            "title": metadata["title"],
-            "link": metadata["link"],
-            "vidid": metadata["vidid"],
-            "duration_min": metadata["duration_min"],
-            "thumb": metadata["thumbnail"]
+            "title": metadata.get("title", ""),
+            "link": metadata.get("link", ""),
+            "vidid": metadata.get("vidid", ""),
+            "duration_min": metadata.get("duration_min", ""),
+            "thumb": metadata.get("thumbnail", "")
         }
-        return track_details, metadata["vidid"]
+        return track_details, metadata.get("vidid", "")
 
     async def formats(self, link: str, videoid: Union[bool, str] = None) -> Tuple[List[Dict], str]:
         """Get available video formats."""
@@ -204,91 +235,123 @@ class YouTubeAPI:
         if cache_key in metadata_cache:
             return metadata_cache[cache_key], link
 
-        ydl = yt_dlp.YoutubeDL(self._ytdl_opts)
-        try:
-            info = ydl.extract_info(link, download=False)
-            formats_available = [
-                {
-                    "format": format["format"],
-                    "filesize": format.get("filesize"),
-                    "format_id": format["format_id"],
-                    "ext": format["ext"],
-                    "format_note": format.get("format_note"),
-                    "yturl": link
-                }
-                for format in info["formats"]
-                if "dash" not in str(format.get("format", "")).lower() and all(
-                    key in format for key in ["format", "format_id", "ext"]
-                )
-            ]
-            metadata_cache[cache_key] = formats_available
-            return formats_available, link
-        except Exception as e:
-            logger.error(f"Error fetching formats: {str(e)}")
-            return [], link
+        for _ in range(len(self._cookie_files)):
+            ydl = yt_dlp.YoutubeDL(self._ytdl_opts)
+            try:
+                info = ydl.extract_info(link, download=False)
+                formats_available = [
+                    {
+                        "format": format["format"],
+                        "filesize": format.get("filesize"),
+                        "format_id": format["format_id"],
+                        "ext": format["ext"],
+                        "format_note": format.get("format_note"),
+                        "yturl": link
+                    }
+                    for format in info["formats"]
+                    if "dash" not in str(format.get("format", "")).lower() and all(
+                        key in format for key in ["format", "format_id", "ext"]
+                    )
+                ]
+                metadata_cache[cache_key] = formats_available
+                return formats_available, link
+            except yt_dlp.utils.DownloadError as e:
+                if "unavailable" in str(e).lower():
+                    logger.warning(f"Video unavailable for formats with current cookie: {str(e)}")
+                    self._cycle_cookie_file()
+                    continue
+                logger.error(f"Error fetching formats: {str(e)}")
+                return [], link
+            except Exception as e:
+                logger.error(f"Unexpected error fetching formats: {str(e)}")
+                return [], link
+        return [], link
 
     async def slider(self, link: str, query_type: int, videoid: Union[bool, str] = None) -> Tuple[str, str, str, str]:
         """Get related video details."""
         if videoid:
             link = self.base + link
         link = self._clean_url(link)
-        a = VideosSearch(link, limit=10)
-        result = (await a.next()).get("result")
-        if query_type >= len(result):
+        try:
+            a = VideosSearch(link, limit=10)
+            result = (await a.next()).get("result", [])
+            if query_type >= len(result):
+                return "", "", "", ""
+            return (
+                result[query_type]["title"],
+                result[query_type]["duration"],
+                result[query_type]["thumbnails"][0]["url"].split("?")[0],
+                result[query_type]["id"]
+            )
+        except Exception as e:
+            logger.error(f"Error fetching slider data: {str(e)}")
             return "", "", "", ""
-        return (
-            result[query_type]["title"],
-            result[query_type]["duration"],
-            result[query_type]["thumbnails"][0]["url"].split("?")[0],
-            result[query_type]["id"]
-        )
 
-    async def _download_from_api(self, video_id: str) -> Optional[str]:
-        """Download from API with concurrent retries."""
+    async def _download_from_api(self, video_id: str, retries: int = 3, backoff: float = 1.0) -> Optional[str]:
+        """Download from API with concurrent retries and backoff."""
         file_path = os.path.join("downloads", f"{video_id}.mp3")
         if os.path.exists(file_path):
             logger.info(f"{file_path} already exists. Skipping download.")
             return file_path
 
-        async def try_api(url: str) -> Optional[bytes]:
+        async def try_api(url: str, attempt: int) -> Optional[bytes]:
+            session = await self._ensure_session()
             try:
-                async with self._session.get(url, timeout=30) as response:
+                async with session.get(url, timeout=30) as response:
                     if response.status == 200:
-                        return await response.read()
-                    logger.warning(f"API request failed with status {response.status}")
+                        content = await response.read()
+                        if len(content) > 0:  # Validate non-empty content
+                            return content
+                        logger.warning(f"Empty response from API: {url}")
+                        return None
+                    logger.warning(f"API request failed with status {response.status} for {url}")
                     return None
             except (aiohttp.ClientError, asyncio.TimeoutError) as e:
-                logger.error(f"API download failed: {str(e)}")
+                logger.error(f"API download attempt {attempt} failed for {url}: {str(e)}")
                 return None
 
-        tasks = [try_api(f"{api_url}{video_id}") for api_url in self._api_urls]
-        for future in asyncio.as_completed(tasks):
-            content = await future
-            if content:
-                os.makedirs("downloads", exist_ok=True)
-                with open(file_path, 'wb') as f:
-                    f.write(content)
-                logger.info(f"Successfully downloaded from API: {file_path}")
-                return file_path
-        logger.error("All API attempts failed")
+        for attempt in range(retries):
+            tasks = [try_api(f"{api_url}{video_id}", attempt + 1) for api_url in self._api_urls]
+            for future in asyncio.as_completed(tasks):
+                content = await future
+                if content:
+                    os.makedirs("downloads", exist_ok=True)
+                    with open(file_path, 'wb') as f:
+                        f.write(content)
+                    logger.info(f"Successfully downloaded from API: {file_path}")
+                    return file_path
+            if attempt < retries - 1:
+                await asyncio.sleep(backoff * (2 ** attempt))  # Exponential backoff
+                logger.info(f"Retrying API download, attempt {attempt + 2}")
+
+        logger.error(f"All API attempts failed for video ID {video_id}")
         return None
 
     async def _check_file_size(self, link: str) -> Optional[int]:
-        """Check file size with caching."""
+        """Check file size with caching and cookie cycling."""
         link = self._clean_url(link)
         cache_key = f"size_{link}"
         if cache_key in file_size_cache:
             return file_size_cache[cache_key]
 
-        ydl = yt_dlp.YoutubeDL(self._ytdl_opts)
-        try:
-            info = ydl.extract_info(link, download=False)
-            total_size = sum(format.get("filesize", 0) for format in info.get("formats", []))
-            file_size_cache[cache_key] = total_size
-            return total_size
-        except Exception as e:
-            logger.error(f"Error checking file size: {str(e)}")
-            return None
+        for _ in range(len(self._cookie_files)):
+            ydl = yt_dlp.YoutubeDL(self._ytdl_opts)
+            try:
+                info = ydl.extract_info(link, download=False)
+                total_size = sum(format.get("filesize", 0) for format in info.get("formats", []))
+                file_size_cache[cache_key] = total_size
+                return total_size
+            except yt_dlp.utils.DownloadError as e:
+                if "unavailable" in str(e).lower():
+                    logger.warning(f"Video unavailable for size check: {str(e)}")
+                    self._cycle_cookie_file()
+                    continue
+                logger.error(f"Error checking file size: {str(e)}")
+                return None
+            except Exception as e:
+                logger.error(f"Unexpected error checking file size: {str(e)}")
+                return None
+        return None
 
     async def _shell_cmd(self, cmd: str) -> str:
         """Execute shell command asynchronously."""
@@ -380,37 +443,50 @@ class YouTubeAPI:
             with yt_dlp.YoutubeDL(ydl_optssx) as x:
                 x.download([link])
 
-        try:
-            if songvideo:
-                await loop.run_in_executor(None, song_video_dl)
-                return f"downloads/{title}.mp4", True
-            elif songaudio:
-                await loop.run_in_executor(None, song_audio_dl)
-                return f"downloads/{title}.mp3", True
-            elif video:
-                if await is_on_off(1):
-                    return await loop.run_in_executor(None, video_dl), True
+        for _ in range(len(self._cookie_files)):  # Try all cookie files
+            try:
+                if songvideo:
+                    await loop.run_in_executor(None, song_video_dl)
+                    return f"downloads/{title}.mp4", True
+                elif songaudio:
+                    await loop.run_in_executor(None, song_audio_dl)
+                    return f"downloads/{title}.mp3", True
+                elif video:
+                    if await is_on_off(1):
+                        return await loop.run_in_executor(None, video_dl), True
+                    else:
+                        file_size = await self._check_file_size(link)
+                        if file_size and file_size / (1024 * 1024) > 250:
+                            logger.warning(f"File size {file_size / (1024 * 1024):.2f} MB exceeds 250MB limit.")
+                            return None, False
+                        return await loop.run_in_executor(None, video_dl), True
                 else:
-                    file_size = await self._check_file_size(link)
-                    if file_size and file_size / (1024 * 1024) > 250:
-                        logger.warning(f"File size {file_size / (1024 * 1024):.2f} MB exceeds 250MB limit.")
-                        return None, False
-                    return await loop.run_in_executor(None, video_dl), True
-            else:
-                match = self.video_id_pattern.search(link)
-                if match:
-                    video_id = match.group(1)
-                    downloaded_file = await self._download_from_api(video_id)
-                    if downloaded_file:
-                        return downloaded_file, True
-                return await loop.run_in_executor(None, audio_dl), True
-        except Exception as e:
-            logger.error(f"Download failed: {str(e)}")
-            return None, False
+                    match = self.video_id_pattern.search(link)
+                    if match:
+                        video_id = match.group(1)
+                        downloaded_file = await self._download_from_api(video_id)
+                        if downloaded_file:
+                            return downloaded_file, True
+                    return await loop.run_in_executor(None, audio_dl), True
+            except yt_dlp.utils.DownloadError as e:
+                if "unavailable" in str(e).lower():
+                    logger.warning(f"Video unavailable with current cookie: {str(e)}")
+                    self._cycle_cookie_file()
+                    continue
+                logger.error(f"Download failed: {str(e)}")
+                return None, False
+            except Exception as e:
+                logger.error(f"Unexpected download error: {str(e)}")
+                return None, False
+        logger.error(f"Download failed after trying all cookies for {link}")
+        return None, False
 
 async def main():
     async with YouTubeAPI() as yt:
-        # Example usage
-        link = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-        result, direct = await yt.download(link, None, video=False)
-        print(f"Downloaded file: {result}, Direct: {direct}")
+        # Example usage with the problematic video ID
+        link = "https://www.youtube.com/watch?v=slZUlVj8m8I"
+        try:
+            result, direct = await yt.download(link, None, video=False)
+            logger.info(f"Downloaded file: {result}, Direct: {direct}")
+        except Exception as e:
+            logger.error(f"Main execution failed: {str(e)}")
