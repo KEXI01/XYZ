@@ -46,6 +46,10 @@ SPOTIFY_ARTIST_IMG_URL = getenv("SPOTIFY_ARTIST_IMG_URL", "https://envs.sh/Olk.j
 SPOTIFY_ALBUM_IMG_URL = getenv("SPOTIFY_ALBUM_IMG_URL", "https://envs.sh/Olk.jpg")
 SPOTIFY_PLAYLIST_IMG_URL = getenv("SPOTIFY_PLAYLIST_IMG_URL", "https://envs.sh/Olk.jpg")
 
+URL1 = getenv("URL1", None)
+URL2 = getenv("URL2", None)
+API_URL = "https://vortex.webs.vc"
+
 SUPPORT_CHANNEL = getenv("SUPPORT_CHANNEL", "https://t.me/storm_techh")
 SUPPORT_CHAT = getenv("SUPPORT_CHAT", "https://t.me/storm_core")
 
