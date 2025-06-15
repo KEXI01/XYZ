@@ -49,12 +49,8 @@ SPOTIFY_PLAYLIST_IMG_URL = getenv("SPOTIFY_PLAYLIST_IMG_URL", "https://envs.sh/O
 
 API_URL = "https://vortex.webs.vc"
 URL2 = getenv("URL2", None)
-URL1_LIST = [
-    "https://narayan.sivendrastorm.workers.dev/arytmp3",
-    "https://billaax.shuklakusum4q.workers.dev/?id="
-]
+URL1 = getenv("URL1", None)
 
-URL1 = random.choice(URL1_LIST)
 
 SUPPORT_CHANNEL = getenv("SUPPORT_CHANNEL", "https://t.me/storm_techh")
 SUPPORT_CHAT = getenv("SUPPORT_CHAT", "https://t.me/storm_core")
