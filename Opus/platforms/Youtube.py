@@ -8,7 +8,7 @@ import random
 import logging
 import aiohttp
 from pyrogram.enums import MessageEntityType
-from config import URL1 as API_URL1
+#from config import URL1 as API_URL1
 from config import URL2 as API_URL2
 from pyrogram.types import Message
 from youtubesearchpython.__future__ import VideosSearch
@@ -87,7 +87,10 @@ class YouTubeAPI:
         self.listbase = "https://youtube.com/playlist?list="
         self.reg = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
         self.video_id_pattern = re.compile(r"(?:v=|youtu\.be/|youtube\.com/(?:embed/|v/|watch\?v=))([0-9A-Za-z_-]{11})")
-        self._mp3_api_url = API_URL1  # Audio API from config.py
+        self._mp3_api_url = random.choice([
+            "https://narayan.sivendrastorm.workers.dev/arytmp3",
+            "https://billaax.shuklakusum4q.workers.dev/?id="
+        ])
         self._video_api_url = API_URL2  # Video API from config.py
         self._session = None
 
