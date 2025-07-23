@@ -12,7 +12,10 @@ from youtubesearchpython.__future__ import VideosSearch
 from Opus.utils.database import is_on_off
 from Opus.utils.formatters import time_to_seconds
 import aiohttp
-from config import API_URL1, API_URL2
+#from config import 
+
+API_URL1 = "https://ashlynn-repo.vercel.app/cobolt"
+API_URL2 = "https://narayan.sivendrastorm.workers.dev/arytmp3"
  
 
 def cookie_txt_file():
